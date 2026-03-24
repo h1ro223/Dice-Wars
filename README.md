@@ -1,5 +1,13 @@
-# Dice-Wars
-某ソシャゲのイベント内ミニゲームに似たゲームです
+# 第6作 Dice Wars v1.2
 
-ここからプレイ↓
-https://h1ro223.github.io/Dice-Wars/
+某ソシャゲのイベント内ミニゲームが面白かったので再現しました
+サイコロの出目で相手にダメージを与えたり、シールドを張ったりして戦うゲームです。
+先にHPを0にした方が勝ち！
+
+急に話変わるんだけど最近　崩壊：スターレイル　ってゲーム始めたんだけど面白いね
+
+Google Antigravityにて Claude Opus 4.6 (Thinking)、Claude Sonnet 4.6 (Thinking)、GPT-OSS 120B (Medium) の3モデルを使用しています。
+
+----------------------------------
+
+# ここからプレイ https://h1ro223.github.io/Dice-Wars/
