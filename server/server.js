@@ -12,7 +12,8 @@ const server = http.createServer((req, res) => {
 const wss = new WebSocket.Server({ server });
 
 // ============ プレイヤー管理 ============
-const players = new Map(); // name -> { ws, name, state, selectedOpponent, matchedWith }
+const players = new Map(); // name -> { ws, name, state, selectedOpponent, matchedWith, pendingMatchId }
+const pendingMatches = new Map(); // matchId -> { host, guest, hostAccepted, guestAccepted }
 
 function broadcastPlayerList() {
     const list = [];
@@ -55,9 +56,60 @@ function createMatch(hostName, guestName) {
     broadcastPlayerList();
 }
 
+function requestMatch(hostName, guestName) {
+    const host = players.get(hostName);
+    const guest = players.get(guestName);
+    if (!host || !guest) return;
+
+    const matchId = `${hostName}_${guestName}_${Date.now()}`;
+    host.state = 'pending_match';
+    host.pendingMatchId = matchId;
+    host.selectedOpponent = null;
+    guest.state = 'pending_match';
+    guest.pendingMatchId = matchId;
+    guest.selectedOpponent = null;
+
+    pendingMatches.set(matchId, {
+        host: hostName,
+        guest: guestName,
+        hostAccepted: false,
+        guestAccepted: false
+    });
+
+    host.ws.send(JSON.stringify({
+        type: 'match_request',
+        opponent: guestName,
+        role: 'host'
+    }));
+    guest.ws.send(JSON.stringify({
+        type: 'match_request',
+        opponent: hostName,
+        role: 'guest'
+    }));
+
+    console.log(`[マッチリクエスト] ${hostName}(ホスト) vs ${guestName}(ゲスト)`);
+    broadcastPlayerList();
+}
+
 function removePlayer(name) {
     const player = players.get(name);
     if (!player) return;
+
+    // ペンディングマッチ中なら相手に通知してキャンセル
+    if (player.pendingMatchId) {
+        const match = pendingMatches.get(player.pendingMatchId);
+        if (match) {
+            const otherName = match.host === name ? match.guest : match.host;
+            const other = players.get(otherName);
+            if (other && other.ws.readyState === WebSocket.OPEN) {
+                other.ws.send(JSON.stringify({ type: 'opponent_disconnected' }));
+                other.state = 'lobby';
+                other.pendingMatchId = null;
+                other.selectedOpponent = null;
+            }
+            pendingMatches.delete(player.pendingMatchId);
+        }
+    }
 
     // マッチ中なら相手に通知
     if (player.matchedWith) {
@@ -130,7 +182,8 @@ wss.on('connection', (ws) => {
 
                     // 相互選択チェック
                     if (checkMutualSelection(playerName, targetName)) {
-                        createMatch(playerName, targetName);
+                        // targetName が先に選択した側 = ホスト
+                        requestMatch(targetName, playerName);
                     } else {
                         broadcastPlayerList();
                     }
@@ -141,6 +194,56 @@ wss.on('connection', (ws) => {
                     if (!playerName || !players.has(playerName)) return;
                     const me = players.get(playerName);
                     me.selectedOpponent = null;
+                    broadcastPlayerList();
+                    break;
+                }
+
+                case 'match_accept': {
+                    if (!playerName || !players.has(playerName)) return;
+                    const me5 = players.get(playerName);
+                    if (!me5 || !me5.pendingMatchId) return;
+                    const match = pendingMatches.get(me5.pendingMatchId);
+                    if (!match) return;
+
+                    if (match.host === playerName) match.hostAccepted = true;
+                    else if (match.guest === playerName) match.guestAccepted = true;
+
+                    if (match.hostAccepted && match.guestAccepted) {
+                        // 両者承認 → マッチ成立
+                        const hostP = players.get(match.host);
+                        const guestP = players.get(match.guest);
+                        if (hostP) hostP.pendingMatchId = null;
+                        if (guestP) guestP.pendingMatchId = null;
+                        createMatch(match.host, match.guest);
+                        pendingMatches.delete(me5.pendingMatchId);
+                    }
+                    break;
+                }
+
+                case 'match_decline': {
+                    if (!playerName || !players.has(playerName)) return;
+                    const me6 = players.get(playerName);
+                    if (!me6 || !me6.pendingMatchId) return;
+                    const matchData = pendingMatches.get(me6.pendingMatchId);
+                    if (!matchData) return;
+
+                    const otherName = matchData.host === playerName ? matchData.guest : matchData.host;
+                    const otherPlayer = players.get(otherName);
+                    if (otherPlayer && otherPlayer.ws.readyState === WebSocket.OPEN) {
+                        otherPlayer.ws.send(JSON.stringify({ type: 'match_declined', by: playerName }));
+                    }
+
+                    // 両者をロビーに戻す
+                    [matchData.host, matchData.guest].forEach(n => {
+                        const p = players.get(n);
+                        if (p) {
+                            p.state = 'lobby';
+                            p.pendingMatchId = null;
+                            p.selectedOpponent = null;
+                        }
+                    });
+
+                    pendingMatches.delete(me6.pendingMatchId);
                     broadcastPlayerList();
                     break;
                 }

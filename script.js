@@ -370,15 +370,50 @@ function setPhaseGlow(){
 function showCoinFlip(){
     $('coin-overlay').classList.remove('hidden');$('coin-result').textContent='';$('btn-coin-ok').classList.add('hidden');
     AudioSys.playSe('coin');
-    GS.p1IsAttacker=Math.random()<.5;
+    // オンラインモードではp1IsAttackerはstart_battleで既に設定済み
+    if(GS.mode!=='online'){
+        GS.p1IsAttacker=Math.random()<.5;
+    }
     setTimeout(()=>{
-        $('coin-result').textContent=GS.mode==='cpu'?(GS.p1IsAttacker?'あなたは先攻（攻撃側）！':'あなたは後攻（防御側）！'):(GS.p1IsAttacker?'1Pが先攻（攻撃側）！':'2Pが先攻（攻撃側）！');
+        if(GS.mode==='cpu'){
+            $('coin-result').textContent=GS.p1IsAttacker?'あなたは先攻（攻撃側）！':'あなたは後攻（防御側）！';
+        } else {
+            $('coin-result').textContent=GS.p1IsAttacker?'1Pが先攻（攻撃側）！':'2Pが先攻（攻撃側）！';
+        }
         $('coin-result').style.color=GS.p1IsAttacker?'#FF3366':'#3366FF';
         $('btn-coin-ok').classList.remove('hidden');
+        // オンライン: ホスト=「開始」(ゲスト準備待ち)、ゲスト=「準備OK」
+        if(GS.mode==='online'){
+            if(GS.onlineRole==='host'){
+                $('btn-coin-ok').textContent='開始';
+                $('btn-coin-ok').disabled=true;
+            } else {
+                $('btn-coin-ok').textContent='準備OK';
+                $('btn-coin-ok').disabled=false;
+            }
+        } else {
+            $('btn-coin-ok').textContent='OK';
+            $('btn-coin-ok').disabled=false;
+        }
         AudioSys.playSe('confirm');
     },1800);
 }
-$('btn-coin-ok').addEventListener('click',()=>{AudioSys.playSe('click');$('coin-overlay').classList.add('hidden');startTurn();});
+$('btn-coin-ok').addEventListener('click',()=>{
+    AudioSys.playSe('click');
+    if(GS.mode==='online'){
+        if(GS.onlineRole==='guest'){
+            // ゲスト: 準備OK送信→ホストの開始を待機
+            sendAction({type:'guest_coin_ready'});
+            $('btn-coin-ok').disabled=true;
+            $('btn-coin-ok').textContent='相手の開始を待っています...';
+            return;
+        }
+        // ホスト: 開始→ゲストに通知
+        sendAction({type:'coin_ok'});
+    }
+    $('coin-overlay').classList.add('hidden');
+    startTurn();
+});
 
 // ============ Turn ============
 function startTurn(){
@@ -912,16 +947,37 @@ function handleOnlineMessage(msg){
             GS.onlineRole=msg.role;
             GS.mode='online';
             $('online-modal').classList.add('hidden');
+            $('match-confirm-modal').classList.add('hidden');
             $('online-status').textContent='';
             showOnlineDeckScreen(msg.opponent);
             break;
         case 'opponent_disconnected':
-            alert('相手が切断しました。');
-            if(ws&&ws.readyState===WebSocket.OPEN){
-                sendOnline({type:'return_to_lobby'});
+            // 切断された側もWSを閉じてタイトルに戻る
+            $('match-confirm-modal').classList.add('hidden');
+            $('online-modal').classList.add('hidden');
+            if(ws){
+                ws.close();
+                ws=null;
             }
-            GS.mode=null;GS.p1Char=null;GS.p2Char=null;
+            onlinePlayerName='';
+            GS.mode=null;GS.onlineRole=null;GS.p1Char=null;GS.p2Char=null;
             showScreen('title');
+            setTimeout(()=>alert('相手が切断しました。タイトルに戻ります。'),100);
+            break;
+        case 'match_request':
+            GS.onlineRole=msg.role;
+            $('match-confirm-opponent').textContent=msg.opponent;
+            $('match-confirm-role').textContent=msg.role==='host'?'⭐ あなたはホストです':'あなたはゲストです';
+            $('match-confirm-status').textContent='';
+            $('btn-match-accept').disabled=false;
+            $('btn-match-decline').disabled=false;
+            $('match-confirm-modal').classList.remove('hidden');
+            AudioSys.playSe('confirm');
+            break;
+        case 'match_declined':
+            $('match-confirm-modal').classList.add('hidden');
+            $('online-status').textContent=`${msg.by} が対戦を辞退しました`;
+            AudioSys.playSe('deselect');
             break;
         case 'error':
             $('online-status').textContent='❌ '+msg.message;
@@ -1018,7 +1074,7 @@ $('btn-battle-start').addEventListener('click',()=>{
     AudioSys.playSe('confirm');hideDetail();
     const coinResult=Math.random()<.5;
     GS.p1IsAttacker=coinResult;
-    sendAction({type:'start_battle',p1IsAttacker:coinResult});
+    sendAction({type:'start_battle',p1IsAttacker:coinResult,p1CharId:GS.p1Char.id,p2CharId:GS.p2Char.id});
     startBattle();
 });
 
@@ -1044,7 +1100,10 @@ function handleGameAction(action){
             break;
         }
         case 'start_battle':{
-            GS.p1IsAttacker=!action.p1IsAttacker;
+            // ゲスト: ホストの画面と同じキャラ配置にする（反転なし）
+            GS.p1Char=CHARACTERS.find(c=>c.id===action.p1CharId);
+            GS.p2Char=CHARACTERS.find(c=>c.id===action.p2CharId);
+            GS.p1IsAttacker=action.p1IsAttacker;
             startBattle();
             break;
         }
@@ -1098,6 +1157,19 @@ function handleGameAction(action){
                 GS.defenderSelectedDice=action.selectedDice;
                 startDamageCalc();
             }
+            break;
+        }
+        case 'guest_coin_ready':{
+            // ホスト: ゲストが準備完了→開始ボタン有効化
+            if(GS.onlineRole==='host'){
+                $('btn-coin-ok').disabled=false;
+            }
+            break;
+        }
+        case 'coin_ok':{
+            // ゲスト: ホストが開始→コインオーバーレイ閉じてターン開始
+            $('coin-overlay').classList.add('hidden');
+            startTurn();
             break;
         }
     }
@@ -1213,6 +1285,27 @@ document.addEventListener('DOMContentLoaded',()=>{
             }
             AudioSys.playSe('click');
             sendOnline({type:'set_name',name});
+        });
+    }
+
+    // 対戦確認モーダルのボタン
+    const btnMatchAccept=$('btn-match-accept');
+    if(btnMatchAccept){
+        btnMatchAccept.addEventListener('click',()=>{
+            AudioSys.playSe('confirm');
+            sendOnline({type:'match_accept'});
+            $('btn-match-accept').disabled=true;
+            $('btn-match-decline').disabled=true;
+            $('match-confirm-status').textContent='相手の返答を待っています...';
+        });
+    }
+    const btnMatchDecline=$('btn-match-decline');
+    if(btnMatchDecline){
+        btnMatchDecline.addEventListener('click',()=>{
+            AudioSys.playSe('click');
+            sendOnline({type:'match_decline'});
+            $('match-confirm-modal').classList.add('hidden');
+            $('online-status').textContent='対戦を辞退しました';
         });
     }
 });
