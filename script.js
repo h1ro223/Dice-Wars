@@ -1,137 +1,124 @@
 /* ============================================
-   サイコロ・ウォーズ v1.4 - script.js
+   サイコロ・ウォーズ v1.5 - script.js
    ============================================ */
 
 // ========== サーバーURL設定 (ここを変更すればデフォルトURLが変わります) ==========
 const DEFAULT_SERVER_URL = 'wss://dice-wars-0rcs.onrender.com';
-// ============ Audio System (Web Audio API SE + BGM) ============
+
+// ============ Audio System (BGM / SE 音声ファイル使用) ============
 const AudioSys = {
-    ctx: null, bgmOn: true, seOn: true,
-    bgmTitle: null, bgmBattle: null, currentBgm: null,
+    bgmOn:true, seOn:true, currentBgm:null,
+    _bgm:{}, _se:{}, _initialized:false,
 
     init() {
-        if (this.ctx) return;
-        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-        this.bgmTitle = document.getElementById('bgm-title');
-        this.bgmBattle = document.getElementById('bgm-battle');
-        if (this.bgmTitle) this.bgmTitle.volume = 0.4;
-        if (this.bgmBattle) this.bgmBattle.volume = 0.4;
-    },
-
-    resume() {
-        if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
-    },
-
-    // BGM control
-    playBgm(which) {
-        if (!this.bgmOn) return;
-        this.stopBgm();
-        const el = which === 'title' ? this.bgmTitle : this.bgmBattle;
-        if (!el) return;
-        el.currentTime = 0;
-        el.volume = 0;
-        el.play().catch(() => {});
-        this.currentBgm = el;
-        // Fade in
-        let vol = 0;
-        const fade = setInterval(() => {
-            vol = Math.min(vol + 0.02, 0.4);
-            if (this.currentBgm) this.currentBgm.volume = vol;
-            if (vol >= 0.4) clearInterval(fade);
-        }, 50);
-    },
-
-    stopBgm() {
-        [this.bgmTitle, this.bgmBattle].forEach(el => {
-            if (el) { el.pause(); el.currentTime = 0; }
-        });
-        this.currentBgm = null;
-    },
-
-    toggleBgm(on) {
-        this.bgmOn = on;
-        if (!on) this.stopBgm();
-    },
-
-    toggleSe(on) {
-        this.seOn = on;
-    },
-
-    // SE 生成 (Web Audio API)
-    playSe(type) {
-        if (!this.seOn || !this.ctx) return;
-        this.resume();
-        switch (type) {
-            case 'hover': this._tone(800, 0.04, 'sine', 0.08); break;
-            case 'click': this._tone(600, 0.06, 'square', 0.06); this._tone(900, 0.04, 'sine', 0.04, 0.03); break;
-            case 'select': this._tone(523, 0.08, 'triangle', 0.1); this._tone(659, 0.06, 'triangle', 0.08, 0.06); break;
-            case 'deselect': this._tone(400, 0.06, 'triangle', 0.08); break;
-            case 'roll': this._noise(0.15, 0.12); this._tone(300, 0.03, 'square', 0.1); break;
-            case 'reroll': this._noise(0.12, 0.1); this._tone(440, 0.05, 'triangle', 0.08); this._tone(550, 0.04, 'triangle', 0.06, 0.05); break;
-            case 'confirm': this._tone(523, 0.08, 'sine', 0.1); this._tone(659, 0.08, 'sine', 0.08, 0.08); this._tone(784, 0.1, 'sine', 0.12, 0.16); break;
-            case 'damage': this._noise(0.3, 0.2); this._tone(150, 0.2, 'sawtooth', 0.15); this._tone(100, 0.15, 'square', 0.1, 0.1); break;
-            case 'shield': this._tone(700, 0.1, 'sine', 0.12); this._tone(900, 0.08, 'sine', 0.1, 0.05); break;
-            case 'ability': this._tone(440, 0.1, 'sine', 0.12); this._tone(554, 0.1, 'sine', 0.1, 0.1); this._tone(659, 0.12, 'sine', 0.15, 0.2); this._tone(880, 0.15, 'sine', 0.2, 0.3); break;
-            case 'clash': this._noise(0.25, 0.18); this._tone(200, 0.15, 'sawtooth', 0.12); this._tone(120, 0.2, 'square', 0.15, 0.08); break;
-            case 'win': this._fanfare([523, 659, 784, 1047], 0.12, 0.12); break;
-            case 'lose': this._tone(400, 0.2, 'sine', 0.3); this._tone(350, 0.2, 'sine', 0.25, 0.2); this._tone(300, 0.3, 'sine', 0.4, 0.4); break;
-            case 'coin': this._tone(1200, 0.05, 'sine', 0.08); this._tone(1500, 0.05, 'sine', 0.06, 0.1); this._tone(1800, 0.05, 'sine', 0.04, 0.2); break;
-            case 'turn': this._tone(600, 0.08, 'triangle', 0.1); this._tone(800, 0.1, 'triangle', 0.12, 0.1); break;
-            case 'atk-show': this._tone(350, 0.1, 'sawtooth', 0.12); this._tone(500, 0.08, 'square', 0.1, 0.08); break;
-            case 'def-show': this._tone(500, 0.1, 'sine', 0.12); this._tone(700, 0.08, 'sine', 0.1, 0.08); break;
+        if(this._initialized) return;
+        this._initialized=true;
+        // BGM: vol 0.3 ループ
+        this._bgm.title  = this._mkBgm('./BGM/Title.mp3',  true);
+        this._bgm.battle = this._mkBgm('./BGM/Battle.mp3', true);
+        // SE: vol 0.5
+        const seMap = {
+            cursor:'Cursor',   btnSelect:'ButtonSelect', cancel:'Cancel',
+            diceRoll:'DiceRoll', diceSelect:'DiceSelect', diceCount:'DiceCount',
+            battleStart:'BattleStart', coinToss:'CoinToss', coinFinish:'CoinTossFinish',
+            attack1:'Attack1', attack2:'Attack2',
+            damage:'Damage', noDamage:'NoDamage', spDamage:'SPDamage',
+            win:'Win', lose:'Lose',
+            cure:'Cure', cheat:'Cheat', powerUp:'PowerUP',
+            turn:'Turn', hpRed:'HPRed',
+        };
+        for(const [k,f] of Object.entries(seMap)){
+            this._se[k]=this._mkSe(`./SE/${f}.mp3`);
         }
     },
 
-    _tone(freq, vol, type, dur, delay = 0) {
-        const o = this.ctx.createOscillator();
-        const g = this.ctx.createGain();
-        o.type = type; o.frequency.value = freq;
-        g.gain.setValueAtTime(0, this.ctx.currentTime + delay);
-        g.gain.linearRampToValueAtTime(vol, this.ctx.currentTime + delay + 0.01);
-        g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + delay + dur);
-        o.connect(g); g.connect(this.ctx.destination);
-        o.start(this.ctx.currentTime + delay);
-        o.stop(this.ctx.currentTime + delay + dur + 0.01);
+    _mkBgm(src,loop){
+        const a=new Audio(src); a.loop=loop; a.volume=0.3; a.preload='auto'; return a;
+    },
+    _mkSe(src){
+        const a=new Audio(src); a.volume=0.5; a.preload='auto'; return a;
+    },
+    _play(a){
+        if(!a) return;
+        try{ a.currentTime=0; a.play().catch(()=>{}); }catch(e){}
     },
 
-    _noise(dur, vol) {
-        const bufSize = this.ctx.sampleRate * dur;
-        const buf = this.ctx.createBuffer(1, bufSize, this.ctx.sampleRate);
-        const data = buf.getChannelData(0);
-        for (let i = 0; i < bufSize; i++) data[i] = (Math.random() * 2 - 1) * vol;
-        const n = this.ctx.createBufferSource();
-        const g = this.ctx.createGain();
-        n.buffer = buf;
-        g.gain.setValueAtTime(vol, this.ctx.currentTime);
-        g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + dur);
-        n.connect(g); g.connect(this.ctx.destination);
-        n.start(); n.stop(this.ctx.currentTime + dur + 0.01);
+    playSe(type){
+        if(!this.seOn) return;
+        const s=this._se;
+        switch(type){
+            case 'hover': case 'cursor':        this._play(s.cursor);     break;
+            case 'click': case 'confirm':       this._play(s.btnSelect);  break;
+            case 'select':                      this._play(s.btnSelect);  break;
+            case 'deselect': case 'cancel':     this._play(s.cancel);     break;
+            case 'roll':    case 'reroll':      this._play(s.diceRoll);   break;
+            case 'dice-select':                 this._play(s.diceSelect); break;
+            case 'damage':                      this._play(s.damage);     break;
+            case 'shield':  case 'no-damage':   this._play(s.noDamage);   break;
+            case 'sp-damage':                   this._play(s.spDamage);   break;
+            case 'clash':       this._play(Math.random()<0.5?s.attack1:s.attack2); break;
+            case 'battle-start':                this._play(s.battleStart);break;
+            case 'coin':                        this._play(s.coinToss);   break;
+            case 'coin-finish':                 this._play(s.coinFinish); break;
+            case 'win':                         this._play(s.win);        break;
+            case 'lose':                        this._play(s.lose);       break;
+            case 'cure':                        this._play(s.cure);       break;
+            case 'cheat':                       this._play(s.cheat);      break;
+            case 'power-up':                    this._play(s.powerUp);    break;
+            case 'turn':                        this._play(s.turn);       break;
+            case 'hp-red':                      this._play(s.hpRed);      break;
+            case 'atk-show': case 'def-show':   this._play(s.diceCount);  break;
+        }
     },
 
-    _fanfare(notes, vol, spacing) {
-        notes.forEach((f, i) => this._tone(f, vol, 'sine', 0.2, i * spacing));
-    }
+    playBgm(which){
+        if(!this.bgmOn) return;
+        this.stopBgm();
+        const bgm=this._bgm[which];
+        if(!bgm) return;
+        bgm.currentTime=0; bgm.volume=0;
+        bgm.play().catch(()=>{});
+        this.currentBgm=bgm;
+        let vol=0;
+        const fade=setInterval(()=>{
+            vol=Math.min(vol+0.02,0.3);
+            if(this.currentBgm) this.currentBgm.volume=vol;
+            if(vol>=0.3) clearInterval(fade);
+        },50);
+    },
+
+    stopBgm(){
+        Object.values(this._bgm).forEach(a=>{ if(a){ a.pause(); a.currentTime=0; } });
+        this.currentBgm=null;
+    },
+
+    toggleBgm(on){
+        this.bgmOn=on;
+        if(!on) this.stopBgm();
+        else{
+            const scr=typeof GS!=='undefined'?GS.currentScreen:'title';
+            this.playBgm(scr==='battle'?'battle':'title');
+        }
+    },
+    toggleSe(on){ this.seOn=on; },
 };
 
-// Init audio on first user interaction
-document.addEventListener('click', () => AudioSys.init(), { once: true });
-document.addEventListener('touchstart', () => AudioSys.init(), { once: true });
+// 初回インタラクションでオーディオ初期化 (モバイル対応)
+document.addEventListener('click',()=>{ AudioSys.init(); },{ once:true });
+document.addEventListener('touchstart',()=>{ AudioSys.init(); },{ once:true });
 
 // Settings toggles
-document.addEventListener('DOMContentLoaded', () => {
-    const bgmToggle = document.getElementById('toggle-bgm');
-    const seToggle = document.getElementById('toggle-se');
-    if (bgmToggle) {
-        bgmToggle.addEventListener('change', () => {
+document.addEventListener('DOMContentLoaded',()=>{
+    AudioSys.init();
+    const bgmToggle=document.getElementById('toggle-bgm');
+    const seToggle=document.getElementById('toggle-se');
+    if(bgmToggle){
+        bgmToggle.addEventListener('change',()=>{
             AudioSys.toggleBgm(bgmToggle.checked);
-            if (bgmToggle.checked) {
-                const scr = GS.currentScreen;
-                AudioSys.playBgm(scr === 'battle' ? 'battle' : 'title');
-            }
         });
     }
-    if (seToggle) {
-        seToggle.addEventListener('change', () => AudioSys.toggleSe(seToggle.checked));
+    if(seToggle){
+        seToggle.addEventListener('change',()=>AudioSys.toggleSe(seToggle.checked));
     }
 });
 
@@ -209,6 +196,8 @@ const GS = {
     powerStacks:{p1:0,p2:0},
     ryanDefBuff:{p1:false,p2:false},
     _lastDmg:0,
+    // v1.5: HP赤フラグ
+    _p1HpWasRed:false, _p2HpWasRed:false,
     // オンライン
     onlineRole:null, // 'host' | 'guest'
     onlineReady:{p1:false,p2:false},
@@ -312,13 +301,19 @@ function hideDetail(){$('char-detail-panel').classList.add('hidden');}
 $('btn-close-detail').addEventListener('click',()=>{AudioSys.playSe('click');hideDetail();});
 $('btn-detail-ok').addEventListener('click',()=>{AudioSys.playSe('click');hideDetail();});
 $('btn-back-title').addEventListener('click',()=>{AudioSys.playSe('click');GS.p1Char=null;GS.p2Char=null;hideDetail();showScreen('title');});
-$('btn-battle-start').addEventListener('click',()=>{if(GS.mode==='cpu'&&!GS.p1Char)return;if(GS.mode==='multi'&&(!GS.p1Char||!GS.p2Char))return;AudioSys.playSe('confirm');hideDetail();startBattle();});
+$('btn-battle-start').addEventListener('click',()=>{
+    if(GS.mode==='online')return; // オンラインは別リスナーで処理
+    if(GS.mode==='cpu'&&!GS.p1Char)return;
+    if(GS.mode==='multi'&&(!GS.p1Char||!GS.p2Char))return;
+    AudioSys.playSe('battle-start');hideDetail();startBattle();
+});
 
 // ============ Battle ============
 function startBattle(){
     if(GS.mode==='cpu'&&GS.cpuOpponentChoice==='random'){const a=CHARACTERS.filter(c=>c.id!==GS.p1Char.id);GS.p2Char=a[Math.floor(Math.random()*a.length)];}
     GS.p1Hp=GS.p1Char.hp;GS.p1MaxHp=GS.p1Char.hp;GS.p2Hp=GS.p2Char.hp;GS.p2MaxHp=GS.p2Char.hp;GS.turn=1;GS.animating=false;
     GS.powerStacks={p1:0,p2:0};GS.ryanDefBuff={p1:false,p2:false};GS._lastDmg=0;
+    GS._p1HpWasRed=false;GS._p2HpWasRed=false; // v1.5: HP赤フラグリセット
     showScreen('battle');
     $('action-panel-right').classList.remove('hidden');
     updateBattleUI();showCoinFlip();
@@ -395,7 +390,7 @@ function showCoinFlip(){
             $('btn-coin-ok').textContent='OK';
             $('btn-coin-ok').disabled=false;
         }
-        AudioSys.playSe('confirm');
+        AudioSys.playSe('coin-finish');
     },1800);
 }
 $('btn-coin-ok').addEventListener('click',()=>{
@@ -548,8 +543,8 @@ function onDiceClick(i){
     if(GS.mode==='online'&&!isMyTurn())return;
     const dice=activeDice();
     const d=dice[i];
-    if(d.selected){d.selected=false;AudioSys.playSe('deselect');}
-    else{const n=dice.filter(x=>x.selected).length;if(n>=dice.length)return;d.selected=true;AudioSys.playSe('select');}
+    if(d.selected){d.selected=false;AudioSys.playSe('cancel');}
+    else{const n=dice.filter(x=>x.selected).length;if(n>=dice.length)return;d.selected=true;AudioSys.playSe('dice-select');}
     renderActiveDice();updateSelectionUI();updateActionButtons();
     if(GS.mode==='online')sendAction({type:'dice_toggle',player:GS.activePlayer,index:i});
 }
@@ -562,7 +557,9 @@ function updateSelectionUI(){
     const tv=$('selection-total-value');tv.textContent=st;
     if(sc>0){tv.classList.add('has-value');tv.classList.toggle('atk-active',GS.phase==='attack');tv.classList.toggle('def-active',GS.phase==='defense');}
     else tv.className='selection-total-value';
-    $('reroll-count').textContent=`${activeRerolls()}/2`;
+    const rcEl=$('reroll-count');
+    rcEl.textContent=`${activeRerolls()}/2`;
+    rcEl.style.color=activeRerolls()===0?'var(--danger)':'var(--success)';
 }
 
 function updateActionButtons(){
@@ -648,7 +645,7 @@ function cpuPhase(ch,type){
                 const d=toSelect[selIdx];d.selected=true;
                 runningTotal+=d.value;
                 renderCpuAllDice(dice,false);
-                AudioSys.playSe('select');
+                AudioSys.playSe('dice-select');
                 tv.textContent=runningTotal;
                 tv.classList.add('has-value');
                 tv.classList.toggle('atk-active',isAtk);tv.classList.toggle('def-active',!isAtk);
@@ -694,7 +691,7 @@ function startDamageCalc(){
         const hp=GS.p1IsAttacker?GS.p1Hp:GS.p2Hp;
         const r=ac.ability(GS.attackerSelectedDice,hp);abilDescs.push(...r.desc);
         if(r.cheat&&GS.defenderSelectedDice.length>0){
-            let mi=0,mv=0;GS.defenderSelectedDice.forEach((d,i)=>{if(d.value>mv){mv=d.value;mi=i;}});
+            AudioSys.playSe('cheat'); // イカサマ SEn            let mi=0,mv=0;GS.defenderSelectedDice.forEach((d,i)=>{if(d.value>mv){mv=d.value;mi=i;}});
             const ov=GS.defenderSelectedDice[mi].value;GS.defenderSelectedDice[mi].value=2;
             defTotal=GS.defenderSelectedDice.reduce((s,d)=>s+d.value,0);
             abilDescs.push(`防御出目 ${ov} → 2 に変更！`);
@@ -744,7 +741,7 @@ function showInlineDamage(totalAtk,atkBonus,defTotal,dmg,abilDescs,instantDmg){
     // Step 2: Ability activation
     let step2Delay=1200;
     if(abilDescs.length>0){
-        setTimeout(()=>{showAbility(abilDescs.join('\n'));AudioSys.playSe('ability');},step2Delay);
+        setTimeout(()=>{showAbility(abilDescs.join('\n'));AudioSys.playSe('select');},step2Delay);
         if(atkBonus>0){
             setTimeout(()=>{
                 atkValEl.textContent=`${totalAtk-atkBonus}+${atkBonus}`;
@@ -788,6 +785,7 @@ function showInlineDamage(totalAtk,atkBonus,defTotal,dmg,abilDescs,instantDmg){
         }
         if(instantDmg>0){
             rv.textContent+=`\n⚡ 即時${instantDmg}ダメージ！`;
+            AudioSys.playSe('sp-damage'); // 即時ダメージ SE
         }
     },step2Delay+1600);
 
@@ -826,17 +824,19 @@ function applyDamage(dmg,instantDmg){
         GS.p1Hp=Math.max(0,GS.p1Hp-dmg);
         if(instantDmg>0)GS.p2Hp=Math.max(0,GS.p2Hp-instantDmg);
     }
-    // ライアン: ダメージ0ならHP5回復
+    // ライアン: ダメージ 0 なら HP5 回復
     if(dc.abilityType==='defense_ryan'&&dmg===0){
         const defKey=GS.p1IsAttacker?'p2':'p1';
         if(defKey==='p1'){GS.p1Hp=Math.min(GS.p1MaxHp,GS.p1Hp+5);}
         else{GS.p2Hp=Math.min(GS.p2MaxHp,GS.p2Hp+5);}
+        AudioSys.playSe('cure'); // 回復 SE
     }
     // オーガスト: 攻撃後パワー獲得
     if(ac.abilityType==='attack_august'){
         const atkKey=GS.p1IsAttacker?'p1':'p2';
         const r=ac.ability(GS.attackerSelectedDice);
         GS.powerStacks[atkKey]=r.stacks;
+        AudioSys.playSe('power-up'); // パワー獲得 SE
     }
     // ライアンDEFバフ: ターン終了時チェック
     ['p1','p2'].forEach(key=>{
@@ -847,6 +847,15 @@ function applyDamage(dmg,instantDmg){
         }
     });
     updateBattleUI();
+    // v1.5: HP赤トラッキング (赤になった時に毎回再生)
+    const p1R=GS.p1MaxHp>0?GS.p1Hp/GS.p1MaxHp:1;
+    const p2R=GS.p2MaxHp>0?GS.p2Hp/GS.p2MaxHp:1;
+    const p1NowRed=p1R<=0.25&&GS.p1Hp>0;
+    const p2NowRed=p2R<=0.25&&GS.p2Hp>0;
+    if(p1NowRed&&!GS._p1HpWasRed) AudioSys.playSe('hp-red');
+    if(p2NowRed&&!GS._p2HpWasRed) AudioSys.playSe('hp-red');
+    GS._p1HpWasRed=p1NowRed;
+    GS._p2HpWasRed=p2NowRed;
     if(dmg>0){const ta=GS.p1IsAttacker?$('opponent-area'):$('player-area');ta.classList.add('shake');setTimeout(()=>ta.classList.remove('shake'),500);}
     GS.animating=false;
     // 引き分けチェック
@@ -866,6 +875,7 @@ function hideAbility(){$('ability-notification').classList.add('hidden');$('abil
 // ============ Result ============
 function showResult(type){
     $('result-overlay').classList.remove('hidden');
+    AudioSys.stopBgm(); // バトルBGM停止
     const t=$('result-title'),d=$('result-detail');
     if(type==='draw'){
         t.textContent='DRAW';t.className='result-title lose';
@@ -882,7 +892,10 @@ function showResult(type){
     }
     createParticles(p1W||GS.mode==='multi'||GS.mode==='online');
     if(GS.mode==='cpu') AudioSys.playSe(p1W?'win':'lose');
-    else AudioSys.playSe('win');
+    else if(GS.mode==='online'){
+        const localWin=GS.onlineRole==='host'?p1W:!p1W;
+        AudioSys.playSe(localWin?'win':'lose');
+    } else AudioSys.playSe('win');
 }
 
 function createParticles(w){
@@ -1076,7 +1089,7 @@ $('btn-battle-start').addEventListener('click',()=>{
     if(GS.mode!=='online')return;
     if(GS.onlineRole!=='host')return;
     if(!GS.p1Char||!GS.p2Char)return;
-    AudioSys.playSe('confirm');hideDetail();
+    AudioSys.playSe('battle-start');hideDetail();
     const coinResult=Math.random()<.5;
     GS.p1IsAttacker=coinResult;
     sendAction({type:'start_battle',p1IsAttacker:coinResult,p1CharId:GS.p1Char.id,p2CharId:GS.p2Char.id});
@@ -1137,7 +1150,7 @@ function handleGameAction(action){
                 GS.activePlayer=2;renderP2Dice();
             }
             updateSelectionUI();updateActionButtons();
-            AudioSys.playSe('select');
+            AudioSys.playSe('dice-select');
             break;
         }
         case 'reroll':{
@@ -1307,10 +1320,21 @@ document.addEventListener('DOMContentLoaded',()=>{
     const btnMatchDecline=$('btn-match-decline');
     if(btnMatchDecline){
         btnMatchDecline.addEventListener('click',()=>{
-            AudioSys.playSe('click');
+            AudioSys.playSe('cancel'); // 辞退はキャンセルSE
             sendOnline({type:'match_decline'});
             $('match-confirm-modal').classList.add('hidden');
             $('online-status').textContent='対戦を辞退しました';
         });
     }
 });
+
+// ============ Opening Animation (v1.5) ============
+(function(){
+    const overlay=document.getElementById('opening-overlay');
+    if(!overlay) return;
+    // 2.3秒後にフェードアウト開始、約2.5秒后に完全届かなくなる
+    setTimeout(()=>{
+        overlay.classList.add('op-fade-out');
+        setTimeout(()=>overlay.classList.add('op-done'), 700);
+    }, 2300);
+})();

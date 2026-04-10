@@ -1,5 +1,5 @@
 /* ============================================
-   サイコロ・ウォーズ v1.2 - style.css
+   サイコロ・ウォーズ v1.5 - style.css
    ============================================ */
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -21,6 +21,11 @@ html, body {
     font-family:'Noto Sans JP',sans-serif;
     background:var(--bg-dark); color:var(--text-primary);
     -webkit-tap-highlight-color:transparent; user-select:none;
+    /* iPhone safe area */
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+    padding-left:env(safe-area-inset-left,0px);
+    padding-right:env(safe-area-inset-right,0px);
 }
 
 /* Screen */
@@ -256,9 +261,6 @@ html, body {
 .dice-small.d8 { width:32px;height:32px; clip-path:polygon(50% 0%,95% 25%,95% 75%,50% 100%,5% 75%,5% 25%); }
 
 /* ===== ACTION PANEL (Circle buttons) ===== */
-.action-panel-side { position:absolute; z-index:30; display:flex; flex-direction:column; align-items:center; gap:8px; }
-.action-panel-right { right:8px; top:50%; transform:translateY(-50%); }
-.action-panel-left { left:8px; top:50%; transform:translateY(-50%); }
 .action-circle-group { display:flex; flex-direction:column; align-items:center; gap:10px; }
 .btn-circle { width:70px;height:70px; border-radius:50%; border:2px solid var(--glass-border); background:var(--glass-bg); backdrop-filter:blur(10px); cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; transition:all .3s; color:var(--text-primary); font-family:'Noto Sans JP',sans-serif; }
 .btn-circle:hover:not(:disabled) { background:var(--glass-bg-hover); transform:scale(1.08); border-color:rgba(255,255,255,.25); }
@@ -268,10 +270,6 @@ html, body {
 .btn-reroll-circle:not(:disabled) { border-color:rgba(34,197,94,.5); box-shadow:0 0 12px rgba(34,197,94,.2); }
 .btn-reroll-circle:hover:not(:disabled) { border-color:var(--success); box-shadow:0 0 20px rgba(34,197,94,.4); }
 .btn-ok-circle { width:70px;height:70px; }
-.btn-ok-circle:not(:disabled) { border-color:rgba(51,102,255,.5); background:rgba(51,102,255,.15); box-shadow:0 0 12px var(--def-glow); }
-.btn-ok-circle:hover:not(:disabled) { border-color:var(--def-primary); box-shadow:0 0 20px var(--def-glow); }
-.action-counter { display:flex; flex-direction:column; align-items:center; gap:4px; }
-.counter-text { font-family:'Orbitron',sans-serif; font-size:15px; font-weight:900; color:var(--text-primary); }
 .reroll-counter { background:var(--glass-bg); padding:3px 10px; border-radius:20px; border:1px solid var(--glass-border); }
 .reroll-count-text { font-family:'Orbitron',sans-serif; font-size:12px; font-weight:700; color:var(--success); }
 
@@ -340,11 +338,12 @@ html, body {
 /* ===== RESPONSIVE ===== */
 @media (max-width:480px) {
     :root { --dice-size:40px; }
-    .btn-circle { width:60px;height:60px; }
-    .btn-ok-circle { width:60px;height:60px; }
+    .btn-circle { width:56px;height:56px; }
+    .btn-ok-circle { width:56px;height:56px; }
     .circle-icon { font-size:20px; }
     .circle-label { font-size:9px; }
-    .counter-text { font-size:13px; }
+    .counter-text { font-size:12px; }
+    .reroll-count-text { font-size:11px; }
     .action-panel-right { right:4px; }
     .action-panel-left { left:4px; }
     .btn-large { padding:12px 28px; font-size:15px; }
@@ -358,6 +357,10 @@ html, body {
     .turn-number { font-size:10px; }
     .phase-label { font-size:9px; padding:2px 6px; }
     .btn-hud { width:30px;height:30px; font-size:14px; }
+    /* スマホ safe area 対応 */
+    .battle-hud { top:max(6px,env(safe-area-inset-top)); }
+    .player-area.player { padding-bottom:max(4px,env(safe-area-inset-bottom)); }
+    .title-footer { margin-bottom:max(12px,env(safe-area-inset-bottom)); }
 }
 
 @media (min-width:768px) {
@@ -373,3 +376,102 @@ html, body {
     .action-panel-right { right:12px; }
     .action-panel-left { left:12px; }
 }
+
+/* ♥ 小さい画面高さ対応 (iPhone SEなど) */
+@media (max-height:680px) {
+    .player-area.opponent { padding-top:26px; }
+    .dice-area { padding:1px 14px; }
+    .btn-circle { width:52px;height:52px; }
+    .btn-ok-circle { width:52px;height:52px; }
+    .circle-icon { font-size:18px; }
+    .ability-bar-text { -webkit-line-clamp:1; }
+}
+
+/* ===== OPENING ANIMATION ===== */
+#opening-overlay {
+    position:fixed; inset:0; z-index:9999;
+    background:radial-gradient(ellipse at 50% 50%,#1a0a3e 0%,#000 100%);
+    display:flex; align-items:center; justify-content:center;
+    overflow:hidden; pointer-events:all;
+    transition:opacity .7s ease-out;
+}
+#opening-overlay.op-fade-out { opacity:0; pointer-events:none; }
+#opening-overlay.op-done { display:none!important; }
+
+/* ― 光ビーム ― */
+.op-beam {
+    position:absolute; width:2px; height:100vh;
+    background:linear-gradient(to bottom,transparent,rgba(255,215,0,.5),transparent);
+    opacity:0; pointer-events:none;
+}
+.op-beam1 { left:25%; animation:opBeam .7s ease-out .15s forwards; }
+.op-beam2 { left:50%; animation:opBeam .7s ease-out .25s forwards; }
+.op-beam3 { left:75%; animation:opBeam .7s ease-out .2s  forwards; }
+@keyframes opBeam {
+    0%  { opacity:0; transform:scaleY(0) translateY(-50%); }
+    30% { opacity:1; transform:scaleY(1) translateY(0); }
+    100%{ opacity:0; transform:scaleY(1) translateY(0); }
+}
+
+/* ― コーナーダイス ― */
+.op-dice {
+    position:absolute; font-size:clamp(44px,9vw,70px);
+    filter:drop-shadow(0 0 16px rgba(255,215,0,.8));
+    opacity:0; pointer-events:none;
+}
+.op-dice-tl { top:8%;  left:5%;  animation:opDTL .55s cubic-bezier(.16,1,.3,1) .45s forwards; }
+.op-dice-tr { top:8%;  right:5%; animation:opDTR .55s cubic-bezier(.16,1,.3,1) .5s  forwards; }
+.op-dice-bl { bottom:8%; left:5%;  animation:opDBL .55s cubic-bezier(.16,1,.3,1) .55s forwards; }
+.op-dice-br { bottom:8%; right:5%; animation:opDBR .55s cubic-bezier(.16,1,.3,1) .6s  forwards; }
+@keyframes opDTL { 0%{transform:translate(-100px,-100px) rotate(-540deg);opacity:0} 100%{transform:translate(0,0) rotate(0);opacity:1} }
+@keyframes opDTR { 0%{transform:translate(100px,-100px)  rotate(540deg);opacity:0}  100%{transform:translate(0,0) rotate(0);opacity:1} }
+@keyframes opDBL { 0%{transform:translate(-100px,100px)  rotate(540deg);opacity:0}  100%{transform:translate(0,0) rotate(0);opacity:1} }
+@keyframes opDBR { 0%{transform:translate(100px,100px)   rotate(-540deg);opacity:0} 100%{transform:translate(0,0) rotate(0);opacity:1} }
+
+/* ― フラッシュ ― */
+.op-flash {
+    position:absolute; inset:0; background:#fff; opacity:0;
+    animation:opFlash .5s ease-out .72s both; pointer-events:none; z-index:3;
+}
+@keyframes opFlash { 0%{opacity:0} 15%{opacity:.85} 100%{opacity:0} }
+
+/* ― 衝撃波 ― */
+.op-shockwave {
+    position:absolute; top:50%; left:50%;
+    width:20px; height:20px; margin:-10px 0 0 -10px;
+    border-radius:50%; border:4px solid rgba(255,215,0,.9);
+    animation:opWave .75s ease-out .75s both; z-index:2; pointer-events:none;
+}
+@keyframes opWave { 0%{transform:scale(1);opacity:1} 100%{transform:scale(80);opacity:0} }
+
+/* ― タイトルロゴ ― */
+.op-content {
+    position:relative; z-index:4; text-align:center;
+    animation:opSlam .55s cubic-bezier(.16,1,.3,1) .78s both;
+}
+@keyframes opSlam {
+    0%  { transform:scale(3.5) translateY(-20px); opacity:0; filter:blur(14px); }
+    55% { transform:scale(.95) translateY(0);     opacity:1; filter:blur(0); }
+    100%{ transform:scale(1)   translateY(0);     opacity:1; filter:blur(0); }
+}
+.op-title-main {
+    font-family:'Orbitron','Noto Sans JP',sans-serif;
+    font-size:clamp(22px,7vw,52px); font-weight:900; letter-spacing:3px; line-height:1.2;
+    background:linear-gradient(135deg,var(--gold),#FFA500,var(--gold));
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+    filter:drop-shadow(0 0 30px rgba(255,215,0,.9));
+}
+.op-title-sub {
+    font-family:'Orbitron',sans-serif; font-size:clamp(9px,2vw,15px);
+    color:var(--text-muted); letter-spacing:6px; margin-top:6px;
+    animation:opFadeUp .4s ease-out 1.1s both;
+}
+.op-title-ver {
+    font-family:'Orbitron',sans-serif; font-size:clamp(11px,2.5vw,18px);
+    color:var(--text-secondary); letter-spacing:4px; margin-top:3px;
+    animation:opFadeUp .4s ease-out 1.2s both;
+}
+@keyframes opFadeUp { 0%{transform:translateY(12px);opacity:0} 100%{transform:translateY(0);opacity:1} }
+/* ― 背景パーティクル ― */
+.op-particles { position:absolute; inset:0; pointer-events:none; }
+
