@@ -1,13 +1,17 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>サイコロ・ウォーズ v1.4</title>
     <meta name="description" content="サイコロ・ウォーズ - サイコロで戦う戦略バトルゲーム！キャラカードとサイコロを駆使して勝利を掴め！">
     <link rel="stylesheet" href="./style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+JP:wght@400;500;700;900&display=swap"
+        rel="stylesheet">
 </head>
+
 <body>
 
     <!-- ========== タイトル画面 ========== -->
@@ -64,24 +68,35 @@
             <div class="modal-body" style="display:flex;flex-direction:column;gap:12px;">
                 <!-- STEP 1: 接続 -->
                 <div id="online-step-connect">
-                    <p style="font-size:11px;color:var(--text-secondary);text-align:center;margin-bottom:8px;">サーバーに接続してプレイヤー名を設定しよう！</p>
+                    <p style="font-size:11px;color:var(--text-secondary);text-align:center;margin-bottom:8px;">
+                        サーバーに接続してプレイヤー名を設定しよう！</p>
                     <div style="display:flex;gap:8px;margin-bottom:8px;">
                         <!-- ========== デフォルトサーバーURL ========== -->
-                        <input type="text" id="online-server-url" value="wss://dice-wars-0rcs.onrender.com" placeholder="サーバーURL" style="flex:1;padding:10px;border-radius:8px;border:1px solid var(--glass-border);background:var(--glass-bg);color:#fff;font-size:12px;">
-                        <button id="btn-online-connect" class="btn-glow" style="padding:10px 16px;font-size:13px;">接続</button>
+                        <input type="text" id="online-server-url" value="wss://dice-wars-0rcs.onrender.com"
+                            placeholder="サーバーURL"
+                            style="flex:1;padding:10px;border-radius:8px;border:1px solid var(--glass-border);background:var(--glass-bg);color:#fff;font-size:12px;">
+                        <button id="btn-online-connect" class="btn-glow"
+                            style="padding:10px 16px;font-size:13px;">接続</button>
                     </div>
                     <div style="display:flex;gap:8px;">
-                        <input type="text" id="online-player-name" placeholder="名前 (英数字6文字)" maxlength="6" style="flex:1;padding:10px;border-radius:8px;border:1px solid var(--glass-border);background:var(--glass-bg);color:#fff;font-size:14px;font-family:'Orbitron',sans-serif;text-transform:uppercase;letter-spacing:2px;text-align:center;">
-                        <button id="btn-online-set-name" class="btn-glow btn-multi" style="padding:10px 16px;font-size:13px;" disabled>登録</button>
+                        <input type="text" id="online-player-name" placeholder="名前 (英数字6文字)" maxlength="6"
+                            style="flex:1;padding:10px;border-radius:8px;border:1px solid var(--glass-border);background:var(--glass-bg);color:#fff;font-size:14px;font-family:'Orbitron',sans-serif;text-transform:uppercase;letter-spacing:2px;text-align:center;">
+                        <button id="btn-online-set-name" class="btn-glow btn-multi"
+                            style="padding:10px 16px;font-size:13px;" disabled>登録</button>
                     </div>
                 </div>
                 <!-- STEP 2: ロビー -->
                 <div id="online-step-lobby" class="hidden">
-                    <p style="font-size:11px;color:var(--text-secondary);text-align:center;margin-bottom:6px;">対戦したいプレイヤーを選んでください（相手も選ぶとマッチ！）</p>
-                    <div id="online-player-list" style="max-height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;padding:4px;"></div>
-                    <p id="online-my-name" style="text-align:center;font-size:11px;color:var(--gold);margin-top:6px;"></p>
+                    <p style="font-size:11px;color:var(--text-secondary);text-align:center;margin-bottom:6px;">
+                        対戦したいプレイヤーを選んでください（相手も選ぶとマッチ！）</p>
+                    <div id="online-player-list"
+                        style="max-height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;padding:4px;">
+                    </div>
+                    <p id="online-my-name" style="text-align:center;font-size:11px;color:var(--gold);margin-top:6px;">
+                    </p>
                 </div>
-                <p id="online-status" style="text-align:center;font-size:12px;color:var(--text-secondary);min-height:20px;"></p>
+                <p id="online-status"
+                    style="text-align:center;font-size:12px;color:var(--text-secondary);min-height:20px;"></p>
             </div>
         </div>
     </div>
@@ -93,13 +108,17 @@
                 <h2>⚔️ 対戦リクエスト</h2>
             </div>
             <div class="modal-body" style="text-align:center;">
-                <p id="match-confirm-role" style="color:var(--gold);font-size:13px;margin-bottom:8px;font-weight:700;"></p>
-                <p style="margin-bottom:16px;font-size:15px;"><span id="match-confirm-opponent" style="font-weight:700;color:#fff;font-family:'Orbitron',sans-serif;letter-spacing:2px;"></span> さんと対戦を始めますか？</p>
+                <p id="match-confirm-role" style="color:var(--gold);font-size:13px;margin-bottom:8px;font-weight:700;">
+                </p>
+                <p style="margin-bottom:16px;font-size:15px;"><span id="match-confirm-opponent"
+                        style="font-weight:700;color:#fff;font-family:'Orbitron',sans-serif;letter-spacing:2px;"></span>
+                    さんと対戦を始めますか？</p>
                 <div style="display:flex;gap:12px;justify-content:center;">
                     <button id="btn-match-decline" class="btn-outline">いいえ</button>
                     <button id="btn-match-accept" class="btn-glow">はい</button>
                 </div>
-                <p id="match-confirm-status" style="font-size:11px;color:var(--text-secondary);margin-top:10px;min-height:16px;"></p>
+                <p id="match-confirm-status"
+                    style="font-size:11px;color:var(--text-secondary);margin-top:10px;min-height:16px;"></p>
             </div>
         </div>
     </div>
@@ -118,7 +137,8 @@
                 </div>
                 <div class="howto-section">
                     <h3>🃏 キャラカード</h3>
-                    <p>各キャラには<strong>HP</strong>（体力）、<strong>ATK</strong>（攻撃時に選べるサイコロ数）、<strong>DEF</strong>（防御時に選べるサイコロ数）、固有の<strong>能力</strong>があります。</p>
+                    <p>各キャラには<strong>HP</strong>（体力）、<strong>ATK</strong>（攻撃時に選べるサイコロ数）、<strong>DEF</strong>（防御時に選べるサイコロ数）、固有の<strong>能力</strong>があります。
+                    </p>
                 </div>
                 <div class="howto-section">
                     <h3>🎲 サイコロの種類</h3>
@@ -239,9 +259,11 @@
             </div>
             <div class="modal-body about-body">
                 <h3>このサイトについて</h3>
-                <p>本サイトは、スマートフォンゲーム『崩壊：スターレイル』に登場するイベント「サイコロ最高！コズミックフォース！」を参考に、個人のファン活動の一環として制作・公開されているものであり、COGNOSPHERE PTE. LTD. および関連会社とは一切関係ありません。</p>
+                <p>本サイトは、スマートフォンゲーム『崩壊：スターレイル』に登場するイベント「サイコロ最高！コズミックフォース！」を参考に、個人のファン活動の一環として制作・公開されているものであり、COGNOSPHERE
+                    PTE. LTD. および関連会社とは一切関係ありません。</p>
                 <h3>著作権および知的財産権について</h3>
-                <p>『崩壊：スターレイル』に関連するゲームタイトル、キャラクター、楽曲タイトル、ロゴ、画像、音声、ゲーム内デザインなどの著作権・商標権およびその他の知的財産権は、すべて COGNOSPHERE PTE. LTD. および各権利者に帰属します。</p>
+                <p>『崩壊：スターレイル』に関連するゲームタイトル、キャラクター、楽曲タイトル、ロゴ、画像、音声、ゲーム内デザインなどの著作権・商標権およびその他の知的財産権は、すべて COGNOSPHERE PTE.
+                    LTD. および各権利者に帰属します。</p>
                 <p>本サイトでは、ゲームの内容を説明・整理する目的で、以下のような素材を使用する場合があります。</p>
                 <ul>
                     <li>ゲーム画面のスクリーンショット</li>
@@ -288,7 +310,9 @@
     <!-- ========== 中断確認モーダル ========== -->
     <div id="quit-confirm-modal" class="modal-overlay hidden">
         <div class="modal-content modal-sm">
-            <div class="modal-header"><h2>確認</h2></div>
+            <div class="modal-header">
+                <h2>確認</h2>
+            </div>
             <div class="modal-body" style="text-align:center;">
                 <p style="margin-bottom:16px;color:var(--text-secondary);">ゲームを中断してタイトルに戻りますか？<br>現在の進行状況は失われます。</p>
                 <div style="display:flex;gap:12px;justify-content:center;">
@@ -323,7 +347,8 @@
             <div class="deck-section sp-section">
                 <h3 class="section-label">SPサイコロ <span class="sp-badge">COMING SOON</span></h3>
                 <div class="sp-placeholder">
-                    <div class="sp-slot disabled"><span class="sp-icon">🔒</span><span class="sp-text">v2.0で実装予定</span></div>
+                    <div class="sp-slot disabled"><span class="sp-icon">🔒</span><span class="sp-text">v2.0で実装予定</span>
+                    </div>
                 </div>
             </div>
             <div class="deck-actions">
@@ -339,9 +364,12 @@
             </div>
             <div class="detail-body">
                 <div class="detail-stats">
-                    <div class="stat-row"><span class="stat-icon">❤️</span><span class="stat-label">HP</span><span id="detail-hp" class="stat-value"></span></div>
-                    <div class="stat-row"><span class="stat-icon">⚔️</span><span class="stat-label">ATK</span><span id="detail-atk" class="stat-value"></span></div>
-                    <div class="stat-row"><span class="stat-icon">🛡️</span><span class="stat-label">DEF</span><span id="detail-def" class="stat-value"></span></div>
+                    <div class="stat-row"><span class="stat-icon">❤️</span><span class="stat-label">HP</span><span
+                            id="detail-hp" class="stat-value"></span></div>
+                    <div class="stat-row"><span class="stat-icon">⚔️</span><span class="stat-label">ATK</span><span
+                            id="detail-atk" class="stat-value"></span></div>
+                    <div class="stat-row"><span class="stat-icon">🛡️</span><span class="stat-label">DEF</span><span
+                            id="detail-def" class="stat-value"></span></div>
                 </div>
                 <div class="detail-dice">
                     <span class="stat-label">所持サイコロ</span>
@@ -481,7 +509,9 @@
     <div id="coin-overlay" class="overlay hidden">
         <div class="overlay-content coin-content">
             <h2 class="overlay-title">先攻・後攻を決定！</h2>
-            <div id="coin-flip" class="coin-flip"><div class="coin">🪙</div></div>
+            <div id="coin-flip" class="coin-flip">
+                <div class="coin">🪙</div>
+            </div>
             <p id="coin-result" class="coin-result"></p>
             <button id="btn-coin-ok" class="btn-glow hidden">OK</button>
         </div>
@@ -512,9 +542,14 @@
     </div>
 
     <!-- BGM Audio -->
-    <audio id="bgm-title" loop preload="auto"><source src="./Title.mp3" type="audio/mpeg"></audio>
-    <audio id="bgm-battle" loop preload="auto"><source src="./Battle.mp3" type="audio/mpeg"></audio>
+    <audio id="bgm-title" loop preload="auto">
+        <source src="./Title.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="bgm-battle" loop preload="auto">
+        <source src="./Battle.mp3" type="audio/mpeg">
+    </audio>
 
     <script src="./script.js"></script>
 </body>
+
 </html>

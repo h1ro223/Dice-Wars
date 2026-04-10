@@ -575,6 +575,7 @@ function updateActionButtons(){
 }
 
 $('btn-reroll').addEventListener('click',()=>{
+    if(GS.animating)return;
     if(GS.mode==='online'&&!isMyTurn())return;
     const rerolls=activeRerolls();
     if(rerolls<=0)return;
@@ -588,10 +589,14 @@ $('btn-reroll').addEventListener('click',()=>{
 });
 
 $('btn-confirm').addEventListener('click',()=>{
+    if(GS.animating)return;
     if(GS.mode==='online'&&!isMyTurn())return;
     const dice=activeDice();
     const sel=dice.filter(d=>d.selected);if(sel.length!==GS.maxSelections)return;
     AudioSys.playSe('confirm');
+    // 連打防止: 即座にボタン無効化
+    $('btn-confirm').disabled=true;
+    $('btn-reroll').disabled=true;
     const selectedData=sel.map(d=>({type:d.type,value:d.value}));
     if(GS.mode==='online')sendAction({type:'confirm',phase:GS.phase,selectedDice:selectedData});
     if(GS.phase==='attack'){GS.attackerSelectedDice=selectedData;startDefensePhase();}
