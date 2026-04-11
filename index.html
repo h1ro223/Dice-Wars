@@ -460,6 +460,7 @@
                 <div class="player-atk-def">
                     <span id="opponent-atk" class="badge badge-atk"></span>
                     <span id="opponent-def" class="badge badge-def"></span>
+                    <button class="btn-info" id="btn-info-opponent" title="キャラ説明">ℹ️</button>
                 </div>
             </div>
             <!-- 2P/CPUサイコロエリア -->
@@ -514,6 +515,7 @@
                 <div class="player-atk-def">
                     <span id="player-atk" class="badge badge-atk"></span>
                     <span id="player-def" class="badge badge-def"></span>
+                    <button class="btn-info" id="btn-info-player" title="キャラ説明">ℹ️</button>
                 </div>
             </div>
             <div id="player-ability-bar" class="ability-bar player-ability">
@@ -538,6 +540,21 @@
             </div>
         </div>
     </section>
+
+    <!-- ========== キャラ説明ポップアップ (バトル中) ========== -->
+    <div id="char-info-popup" class="overlay hidden">
+        <div class="overlay-content char-info-content">
+            <div class="char-info-header">
+                <span id="char-info-portrait" class="char-info-portrait"></span>
+                <div>
+                    <div id="char-info-name" class="char-info-name"></div>
+                    <div id="char-info-stats" class="char-info-stats"></div>
+                </div>
+            </div>
+            <div id="char-info-desc" class="char-info-desc"></div>
+            <button class="btn-glow" id="btn-char-info-close" style="margin-top:14px;">閉じる</button>
+        </div>
+    </div>
 
     <!-- ========== 先攻後攻決定オーバーレイ ========== -->
     <div id="coin-overlay" class="overlay hidden">

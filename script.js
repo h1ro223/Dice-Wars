@@ -1347,9 +1347,31 @@ document.addEventListener('DOMContentLoaded',()=>{
 (function(){
     const overlay=document.getElementById('opening-overlay');
     if(!overlay) return;
-    // 2.3秒後にフェードアウト開始、約2.5秒后に完全届かなくなる
     setTimeout(()=>{
         overlay.classList.add('op-fade-out');
         setTimeout(()=>overlay.classList.add('op-done'), 700);
     }, 2300);
 })();
+
+// ============ ℹ️ Character Info Popup (v1.5) ============
+function showCharInfoPopup(ch){
+    if(!ch) return;
+    const p1Def=GS.p1Char?GS.p1Char.def+(GS.p1Char.id===6&&GS.ryanDefBuff.p1?1:0):ch.def;
+    const p2Def=GS.p2Char?GS.p2Char.def+(GS.p2Char.id===6&&GS.ryanDefBuff.p2?1:0):ch.def;
+    const def=ch===GS.p1Char?p1Def:p2Def;
+    const hp=ch===GS.p1Char?GS.p1Hp:GS.p2Hp;
+    const key=ch===GS.p1Char?'p1':'p2';
+    const power=ch.id===7&&GS.powerStacks[key]>0?`\n⚡ パワー ${GS.powerStacks[key]}層 蓄積中`:'';
+    $('char-info-portrait').textContent=ch.emoji;
+    $('char-info-name').textContent=ch.name;
+    $('char-info-stats').textContent=`HP ${hp}/${ch.hp}  ⚔️${ch.atk}  🛡️${def}`;
+    $('char-info-desc').textContent=ch.abilityDesc+power;
+    AudioSys.playSe('cursor');
+    $('char-info-popup').classList.remove('hidden');
+}
+$('btn-info-player').addEventListener('click',()=>showCharInfoPopup(GS.p1Char));
+$('btn-info-opponent').addEventListener('click',()=>showCharInfoPopup(GS.p2Char));
+$('btn-char-info-close').addEventListener('click',()=>{
+    AudioSys.playSe('cancel');
+    $('char-info-popup').classList.add('hidden');
+});
