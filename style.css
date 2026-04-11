@@ -486,9 +486,21 @@ html, body {
 /* ability-bar をiボタン方式に置き換え → 非表示 */
 .ability-bar { display:none!important; }
 
-/* ℹ️ info button */
-.btn-info { background:none; border:none; cursor:pointer; font-size:16px; padding:2px 4px; line-height:1; opacity:.7; transition:opacity .2s; flex-shrink:0; }
-.btn-info:hover { opacity:1; }
+/* ℹ️ info float button (player-areaの直下、右端に配置) */
+.btn-info-float {
+    position:absolute; right:12px; z-index:20;
+    background:var(--glass-bg); border:1px solid var(--glass-border);
+    border-radius:50%; width:28px; height:28px;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; font-size:14px; line-height:1;
+    opacity:.75; transition:opacity .2s, transform .2s;
+    backdrop-filter:blur(6px);
+}
+.btn-info-float:hover { opacity:1; transform:scale(1.1); }
+/* 2P側: info-card の下端付近に配置 */
+.player-area.opponent .btn-info-float { top:auto; bottom:2px; }
+/* 1P側: info-card の上端付近に配置 */
+.player-area.player .btn-info-float { top:4px; }
 
 /* char info popup */
 .char-info-content { max-width:340px; width:90vw; }
@@ -498,12 +510,10 @@ html, body {
 .char-info-stats { font-size:12px; color:var(--text-secondary); margin-top:4px; }
 .char-info-desc { background:rgba(255,255,255,.06); border-radius:10px; padding:12px 14px; font-size:13px; line-height:1.7; color:var(--text-primary); border:1px solid var(--glass-border); white-space:pre-line; }
 
-/* スマホ下余白修正 */
+/* スマホ余白修正 */
 @media (max-width:480px) {
+    /* 2P上部: ステータスバー・ノッチの分だけ下にずらす */
+    .player-area.opponent { padding-top:max(44px, calc(env(safe-area-inset-top) + 36px)); }
+    /* 1P下部: ホームバー分 */
     .player-area.player { padding-bottom:max(6px,env(safe-area-inset-bottom)); }
-}
-
-/* ボタン微増サイズ */
-@media (min-width:768px) {
-    .btn-info { font-size:18px; }
 }
