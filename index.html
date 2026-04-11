@@ -451,7 +451,10 @@
             <div id="opponent-info-card" class="player-info">
                 <div class="char-portrait-small" id="opponent-portrait"></div>
                 <div class="player-stats">
-                    <span id="opponent-name" class="player-name"></span>
+                    <div class="player-name-row">
+                        <span id="opponent-name" class="player-name"></span>
+                        <button class="btn-info-name" id="btn-info-opponent" title="キャラ説明">ℹ️</button>
+                    </div>
                     <div class="hp-bar-container">
                         <div id="opponent-hp-bar" class="hp-bar"></div>
                         <span id="opponent-hp-text" class="hp-text"></span>
@@ -462,7 +465,6 @@
                     <span id="opponent-def" class="badge badge-def"></span>
                 </div>
             </div>
-            <button class="btn-info-float" id="btn-info-opponent" title="キャラ説明">ℹ️</button>
             <!-- 2P/CPUサイコロエリア -->
             <div id="opponent-dice-area" class="dice-area-inline">
                 <div id="opponent-dice-tray" class="dice-tray-free"></div>
@@ -506,7 +508,10 @@
             <div id="player-info-card" class="player-info">
                 <div class="char-portrait-small" id="player-portrait"></div>
                 <div class="player-stats">
-                    <span id="player-name" class="player-name"></span>
+                    <div class="player-name-row">
+                        <span id="player-name" class="player-name"></span>
+                        <button class="btn-info-name" id="btn-info-player" title="キャラ説明">ℹ️</button>
+                    </div>
                     <div class="hp-bar-container">
                         <div id="player-hp-bar" class="hp-bar"></div>
                         <span id="player-hp-text" class="hp-text"></span>
@@ -517,7 +522,6 @@
                     <span id="player-def" class="badge badge-def"></span>
                 </div>
             </div>
-            <button class="btn-info-float" id="btn-info-player" title="キャラ説明">ℹ️</button>
             <div id="player-ability-bar" class="ability-bar player-ability">
                 <p id="player-ability-text-battle" class="ability-bar-text"></p>
             </div>

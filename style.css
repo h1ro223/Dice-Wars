@@ -486,21 +486,21 @@ html, body {
 /* ability-bar をiボタン方式に置き換え → 非表示 */
 .ability-bar { display:none!important; }
 
-/* ℹ️ info float button (player-areaの直下、右端に配置) */
-.btn-info-float {
-    position:absolute; right:12px; z-index:20;
-    background:var(--glass-bg); border:1px solid var(--glass-border);
-    border-radius:50%; width:28px; height:28px;
-    display:flex; align-items:center; justify-content:center;
-    cursor:pointer; font-size:14px; line-height:1;
-    opacity:.75; transition:opacity .2s, transform .2s;
-    backdrop-filter:blur(6px);
+/* ability-bar非表示でplayer-areaの幅が縮む問題を修正 */
+.player-area { width:100%; }
+
+/* キャラ名行: 名前 + ℹ️ボタンを横並び */
+.player-name-row { display:flex; align-items:center; gap:4px; min-width:0; }
+.player-name-row .player-name { flex:1; min-width:0; }
+
+/* ℹ️ ボタン (キャラ名の右横) */
+.btn-info-name {
+    background:none; border:none; cursor:pointer;
+    font-size:13px; line-height:1; padding:0 2px;
+    opacity:.65; transition:opacity .2s;
+    flex-shrink:0;
 }
-.btn-info-float:hover { opacity:1; transform:scale(1.1); }
-/* 2P側: info-card の下端付近に配置 */
-.player-area.opponent .btn-info-float { top:auto; bottom:2px; }
-/* 1P側: info-card の上端付近に配置 */
-.player-area.player .btn-info-float { top:4px; }
+.btn-info-name:hover { opacity:1; }
 
 /* char info popup */
 .char-info-content { max-width:340px; width:90vw; }
