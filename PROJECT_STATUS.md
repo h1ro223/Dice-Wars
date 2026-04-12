@@ -1,5 +1,5 @@
-# Dice Wars v1.5 - プロジェクト現状まとめ
-**最終更新: 2026-04-11**
+# Dice Wars v1.5.1 - プロジェクト現状まとめ
+**最終更新: 2026-04-13**
 
 ---
 
@@ -19,7 +19,8 @@ HTML/CSS/JS のみで動作。オンライン対戦はNode.js+WebSocketサーバ
 ```
 Dice Wars/
 ├── index.html              # メインHTML（全画面・モーダル含む）
-├── script.js               # ゲームロジック全般（約1340行）
+├── script.js               # ゲームロジック全般（約1490行）
+├── script_backup_v1.5_audio.js  # v1.5 Web Audio API移行前のバックアップ
 ├── style.css               # スタイル（約480行）
 ├── manifest.json           # PWA設定（ホーム画面追加対応）
 ├── Manual.txt              # キャラ・ルール仕様書
@@ -59,14 +60,14 @@ Dice Wars/
 
 ---
 
-## 現在のバージョン: v1.5
+## 現在のバージョン: v1.5.1
 
 ### 実装済み機能
 - VS CPU戦（キャラ選択 → コインフリップ → ターン制バトル）
 - ローカルマルチプレイ（1台の端末で2人）
 - オンラインプレイ（WebSocket、Render運用）
 - 7体のキャラクター（それぞれ固有能力あり）
-- BGM/SE 本格実装（MP3ファイル使用、BGM vol 30% / SE vol 50%）
+- BGM/SE 本格実装（Web Audio API使用、MP3ファイル使用、BGM vol 30% / SE vol 50%）
 - BGM/SE設定トグル
 - オープニングアニメーション（初回ロード時のかっこいい演出）
 - リロール残回数をリロールボタン上部に表示（0回で赤色表示）
@@ -91,6 +92,18 @@ Dice Wars/
 - PWA manifest.json追加
 - iPhone viewport-fit=cover、safe-area-inset対応
 - made by hiro → made by hiro/ヒロ 全箇所変更
+
+### v1.5.1での主な変更
+- **音響システムを Web Audio API (AudioContext + AudioBuffer) に完全移行**
+  - HTMLAudioElement (`new Audio`) → `AudioContext` + `AudioBufferSourceNode`
+  - iOS SafariのSE再生遅延を解消
+  - Dynamic Island / メディアコントロールへの波形表示を防止 (`mediaSession.playbackState='none'`)
+  - 全音声ファイルを `fetch` + `decodeAudioData` でメモリにプリロード
+  - BGM: `GainNode` で音量制御 + `linearRampToValueAtTime` でフェードイン
+- **スマホBGM再生修正**: プリロード完了前のタップでも後続操作でBGMが再生されるように修正
+- **ホバーSE重複再生修正**: キャラカード内の子要素間移動でCursor.mp3が繰り返し再生されるバグを修正
+- **ターン概念変更**: 1ターン = 両者が攻撃・防御を行う（以前は片方の攻防で1ターン）
+- バックアップファイル追加: `script_backup_v1.5_audio.js`（Web Audio API移行前の完全復元用）
 
 ### v1.4での主な変更
 - バランス調整（ホースラ・ジャスパー・クライシス）
@@ -157,6 +170,8 @@ Dice Wars/
 | 5 | 切断後に接続ボタンがグレーアウトしたまま | モーダル再表示時にUI全リセット | 04-07 |
 | 6 | キャラカードがお互いの表示で逆 | ホスト基準のP1/P2統一（`start_battle`でキャラID送信） | 04-09 |
 | 7 | OKボタン・リロールボタンが連打できる | OK押下直後に両ボタンdisabled + `GS.animating`チェック | 04-10 |
+| 8 | スマホBGMが初回タップ後に再生されない | preload完了まで毎回リスナーで試行 | 04-13 |
+| 9 | キャラカードホバーSEが子要素移動で重複再生 | `_lastHoveredEl` で同一要素内の再トリガーを防止 | 04-13 |
 
 ## 新機能（全セッション通算）
 
@@ -172,6 +187,9 @@ Dice Wars/
 | 8 | ホスト/ゲスト表示（先に選んだ側がホスト） | 04-09 |
 | 9 | コインフリップ後の準備OK/開始フロー | 04-09 |
 | 10 | 切断時に両者タイトルに戻る処理 | 04-09 |
+| 11 | Web Audio APIによる音響システム完全移行 | 04-13 |
+| 12 | ホバーSE重複再生防止 | 04-13 |
+| 13 | ターン概念変更（1ターン=両者攻防） | 04-13 |
 
 ---
 

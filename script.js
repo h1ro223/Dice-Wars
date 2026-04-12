@@ -1,5 +1,5 @@
 /* ============================================
-   サイコロ・ウォーズ v1.5 - script.js
+   サイコロ・ウォーズ v1.5.1 - script.js
    ============================================ */
 
 // ========== サーバーURL設定 (ここを変更すればデフォルトURLが変わります) ==========
@@ -207,16 +207,30 @@ class SoundManager {
 // グローバルインスタンス生成 & 後方互換エイリアス
 const AudioSys = new SoundManager();
 
+// v1.5.1: BGM再生待ちフラグ（preload完了前にクリックされた場合に備える）
+let _audioBgmPending = true;
+
 // 初回インタラクションでオーディオ unlock + プリロード + BGM開始 (Safari iOS対応)
-async function _unlockAudio(){
-    await AudioSys.unlock();
-    await AudioSys.preload();
-    // 現在の画面に応じたBGMを再生開始
-    const scr = typeof GS !== 'undefined' ? GS.currentScreen : 'title';
-    AudioSys.playBgm(scr === 'battle' ? 'battle' : 'title');
+// v1.5.1: once:true を外し、preload完了後にBGMが再生されるまで毎回試行する
+function _unlockAudio(){
+    // unlock は非同期だが、ユーザージェスチャー内で即座にresume()する
+    AudioSys.unlock().then(() => {
+        return AudioSys.preload();
+    }).then(() => {
+        if(_audioBgmPending && AudioSys.bgmOn){
+            const scr = typeof GS !== 'undefined' ? GS.currentScreen : 'title';
+            AudioSys.playBgm(scr === 'battle' ? 'battle' : 'title');
+            // BGM再生成功したらリスナーを解除
+            if(AudioSys._bgmSource){
+                _audioBgmPending = false;
+                document.removeEventListener('click', _unlockAudio);
+                document.removeEventListener('touchstart', _unlockAudio);
+            }
+        }
+    }).catch(() => {});
 }
-document.addEventListener('click', _unlockAudio, { once: true });
-document.addEventListener('touchstart', _unlockAudio, { once: true });
+document.addEventListener('click', _unlockAudio);
+document.addEventListener('touchstart', _unlockAudio);
 
 // Settings toggles
 document.addEventListener('DOMContentLoaded', () => {
@@ -233,9 +247,24 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Hover SE for interactive elements
+// v1.5.1: 同一要素内の子要素移動で重複再生されるのを防止
+let _lastHoveredEl = null;
 document.addEventListener('mouseover', (e) => {
     const t = e.target.closest('button, .char-card, .dice:not(.rolling):not(.locked)');
-    if (t) AudioSys.playSe('hover');
+    if (t && t !== _lastHoveredEl) {
+        _lastHoveredEl = t;
+        AudioSys.playSe('hover');
+    }
+});
+document.addEventListener('mouseout', (e) => {
+    const t = e.target.closest('button, .char-card, .dice:not(.rolling):not(.locked)');
+    if (t && t === _lastHoveredEl) {
+        // 子要素への移動ではなく、要素外に出た場合のみリセット
+        const related = e.relatedTarget;
+        if (!related || !t.contains(related)) {
+            _lastHoveredEl = null;
+        }
+    }
 });
 
 // ============ キャラカードデータ ============
@@ -308,6 +337,9 @@ const GS = {
     _lastDmg:0,
     // v1.5: HP赤フラグ
     _p1HpWasRed:false, _p2HpWasRed:false,
+    // v1.5.1: ターン管理 (1ターン=両者攻防)
+    _turnFirstAttacker:true, // このターンの最初の攻撃者がp1かどうか
+    _turnHalf:0, // 0=前半(1人目の攻防), 1=後半(2人目の攻防)
     // オンライン
     onlineRole:null, // 'host' | 'guest'
     onlineReady:{p1:false,p2:false},
@@ -424,6 +456,7 @@ function startBattle(){
     GS.p1Hp=GS.p1Char.hp;GS.p1MaxHp=GS.p1Char.hp;GS.p2Hp=GS.p2Char.hp;GS.p2MaxHp=GS.p2Char.hp;GS.turn=1;GS.animating=false;
     GS.powerStacks={p1:0,p2:0};GS.ryanDefBuff={p1:false,p2:false};GS._lastDmg=0;
     GS._p1HpWasRed=false;GS._p2HpWasRed=false; // v1.5: HP赤フラグリセット
+    GS._turnHalf=0; // v1.5.1: ターン前半からスタート
     showScreen('battle');
     $('action-panel-right').classList.remove('hidden');
     updateBattleUI();showCoinFlip();
@@ -530,6 +563,7 @@ function startTurn(){
 function showTurnStart(cb){
     const o=$('turn-start-overlay');o.classList.remove('hidden');
     AudioSys.playSe('turn');
+    // v1.5.1: ターン表示 + 前半/後半の区別
     $('turn-start-number').textContent=`ターン ${GS.turn}`;
     const r=$('turn-start-role');
     if(GS.mode==='cpu'){r.textContent=GS.p1IsAttacker?'あなたの攻撃！':'あなたの防御！';r.className='turn-start-role '+(GS.p1IsAttacker?'atk-role':'def-role');}
@@ -974,7 +1008,17 @@ function applyDamage(dmg,instantDmg){
     setTimeout(()=>{
         clearDamageDisplay();
         $('opponent-dice-tray').innerHTML='';$('dice-tray').innerHTML='';
-        GS.p1IsAttacker=!GS.p1IsAttacker;GS.turn++;startTurn();
+        GS.p1IsAttacker=!GS.p1IsAttacker;
+        // v1.5.1: 1ターン=両者攻防 (前半→後半→ターン加算)
+        if(GS._turnHalf===0){
+            // 前半終了 → 後半へ（攻守交代だけ、ターン数は変えない）
+            GS._turnHalf=1;
+        } else {
+            // 後半終了 → ターン加算して前半に戻す
+            GS._turnHalf=0;
+            GS.turn++;
+        }
+        startTurn();
     },1200);
 }
 
