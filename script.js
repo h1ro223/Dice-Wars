@@ -5,135 +5,230 @@
 // ========== サーバーURL設定 (ここを変更すればデフォルトURLが変わります) ==========
 const DEFAULT_SERVER_URL = 'wss://dice-wars-0rcs.onrender.com';
 
-// ============ Audio System (BGM / SE 音声ファイル使用) ============
-const AudioSys = {
-    bgmOn:true, seOn:true, currentBgm:null,
-    _bgm:{}, _se:{}, _initialized:false,
+// ============ Audio System - Web Audio API (BGM / SE) ============
+// iOS Safari対応: AudioBufferSourceNode使用で低遅延 & Dynamic Island非表示
+class SoundManager {
+    constructor(){
+        this.bgmOn = true;
+        this.seOn = true;
+        this.ctx = null;           // AudioContext (lazy init)
+        this._buffers = {};        // { name: AudioBuffer }
+        this._bgmSource = null;    // 現在再生中のBGM AudioBufferSourceNode
+        this._bgmGain = null;      // BGM用GainNode
+        this._currentBgmName = null;
+        this._unlocked = false;
+        this._preloaded = false;
+        this._preloadPromise = null;
+    }
 
-    init() {
-        if(this._initialized) return;
-        this._initialized=true;
-        // BGM: vol 0.3 ループ
-        this._bgm.title  = this._mkBgm('./BGM/Title.mp3',  true);
-        this._bgm.battle = this._mkBgm('./BGM/Battle.mp3', true);
-        // SE: vol 0.5
-        const seMap = {
-            cursor:'Cursor',   btnSelect:'ButtonSelect', cancel:'Cancel',
-            diceRoll:'DiceRoll', diceSelect:'DiceSelect', diceCount:'DiceCount',
-            battleStart:'BattleStart', coinToss:'CoinToss', coinFinish:'CoinTossFinish',
-            attack1:'Attack1', attack2:'Attack2',
-            damage:'Damage', noDamage:'NoDamage', spDamage:'SPDamage',
-            win:'Win', lose:'Lose',
-            cure:'Cure', cheat:'Cheat', powerUp:'PowerUP',
-            turn:'Turn', hpRed:'HPRed',
-        };
-        for(const [k,f] of Object.entries(seMap)){
-            this._se[k]=this._mkSe(`./SE/${f}.mp3`);
+    // AudioContextを生成（ユーザー操作内で呼ぶ）
+    _ensureContext(){
+        if(!this.ctx){
+            this.ctx = new (window.AudioContext || window.webkitAudioContext)();
         }
-    },
+        return this.ctx;
+    }
 
-    _mkBgm(src,loop){
-        const a=new Audio(src); a.loop=loop; a.volume=0.3; a.preload='auto'; return a;
-    },
-    _mkSe(src){
-        const a=new Audio(src); a.volume=0.5; a.preload='auto';
-        a.load(); // モバイルで事前ロードを促す
-        return a;
-    },
-    _play(a){
-        if(!a) return;
+    // iOS制限解除: ユーザー操作時に呼ぶ
+    async unlock(){
+        if(this._unlocked) return;
+        this._ensureContext();
+        if(this.ctx.state === 'suspended'){
+            await this.ctx.resume().catch(()=>{});
+        }
+        // iOS Safari: 無音バッファを再生してAudioContextをアンロック
         try{
-            // モバイル遅延対策: cloneNodeで新インスタンスを即再生
-            const c=a.cloneNode();
-            c.volume=a.volume;
-            c.play().catch(()=>{});
+            const buf = this.ctx.createBuffer(1, 1, this.ctx.sampleRate);
+            const src = this.ctx.createBufferSource();
+            src.buffer = buf;
+            src.connect(this.ctx.destination);
+            src.start(0);
         }catch(e){}
-    },
+        // mediaSession非表示対策
+        if('mediaSession' in navigator){
+            navigator.mediaSession.playbackState = 'none';
+            try{
+                navigator.mediaSession.metadata = null;
+                navigator.mediaSession.setActionHandler('play', null);
+                navigator.mediaSession.setActionHandler('pause', null);
+            }catch(e){}
+        }
+        this._unlocked = true;
+    }
 
+    // 全音声ファイルをプリロード
+    async preload(){
+        if(this._preloadPromise) return this._preloadPromise;
+        this._preloadPromise = this._doPreload();
+        return this._preloadPromise;
+    }
+    async _doPreload(){
+        if(this._preloaded) return;
+        this._ensureContext();
+        const files = {
+            // BGM
+            'bgm_title':  './BGM/Title.mp3',
+            'bgm_battle': './BGM/Battle.mp3',
+            // SE (21種)
+            'cursor':      './SE/Cursor.mp3',
+            'btnSelect':   './SE/ButtonSelect.mp3',
+            'cancel':      './SE/Cancel.mp3',
+            'diceRoll':    './SE/DiceRoll.mp3',
+            'diceSelect':  './SE/DiceSelect.mp3',
+            'diceCount':   './SE/DiceCount.mp3',
+            'battleStart': './SE/BattleStart.mp3',
+            'coinToss':    './SE/CoinToss.mp3',
+            'coinFinish':  './SE/CoinTossFinish.mp3',
+            'attack1':     './SE/Attack1.mp3',
+            'attack2':     './SE/Attack2.mp3',
+            'damage':      './SE/Damage.mp3',
+            'noDamage':    './SE/NoDamage.mp3',
+            'spDamage':    './SE/SPDamage.mp3',
+            'win':         './SE/Win.mp3',
+            'lose':        './SE/Lose.mp3',
+            'cure':        './SE/Cure.mp3',
+            'cheat':       './SE/Cheat.mp3',
+            'powerUp':     './SE/PowerUP.mp3',
+            'turn':        './SE/Turn.mp3',
+            'hpRed':       './SE/HPRed.mp3',
+        };
+        const loadOne = async (name, url) => {
+            try{
+                const res = await fetch(url);
+                const arrayBuf = await res.arrayBuffer();
+                this._buffers[name] = await this.ctx.decodeAudioData(arrayBuf);
+            }catch(e){
+                console.warn(`[SoundManager] Failed to load: ${url}`, e);
+            }
+        };
+        await Promise.all(Object.entries(files).map(([n,u]) => loadOne(n,u)));
+        this._preloaded = true;
+    }
+
+    // SE再生 (AudioBufferSourceNode → 低遅延, メディアコントロール非表示)
+    _playSE(name, volume=0.5){
+        if(!this.ctx || !this._buffers[name]) return;
+        if(this.ctx.state === 'suspended') this.ctx.resume().catch(()=>{});
+        const source = this.ctx.createBufferSource();
+        source.buffer = this._buffers[name];
+        const gain = this.ctx.createGain();
+        gain.gain.value = volume;
+        source.connect(gain).connect(this.ctx.destination);
+        source.start(0);
+        // mediaSession非表示維持
+        if('mediaSession' in navigator){
+            navigator.mediaSession.playbackState = 'none';
+        }
+    }
+
+    // 公開SE再生API (既存のAudioSys.playSe()と同じ引数体系)
     playSe(type){
         if(!this.seOn) return;
-        const s=this._se;
         switch(type){
-            case 'hover': case 'cursor':        this._play(s.cursor);     break;
-            case 'click': case 'confirm':       this._play(s.btnSelect);  break;
-            case 'select':                      this._play(s.btnSelect);  break;
-            case 'deselect': case 'cancel':     this._play(s.cancel);     break;
-            case 'roll':    case 'reroll':      this._play(s.diceRoll);   break;
-            case 'dice-select':                 this._play(s.diceSelect); break;
-            case 'damage':                      this._play(s.damage);     break;
-            case 'shield':  case 'no-damage':   this._play(s.noDamage);   break;
-            case 'sp-damage':                   this._play(s.spDamage);   break;
-            case 'clash':       this._play(Math.random()<0.5?s.attack1:s.attack2); break;
-            case 'battle-start':                this._play(s.battleStart);break;
-            case 'coin':                        this._play(s.coinToss);   break;
-            case 'coin-finish':                 this._play(s.coinFinish); break;
-            case 'win':                         this._play(s.win);        break;
-            case 'lose':                        this._play(s.lose);       break;
-            case 'cure':                        this._play(s.cure);       break;
-            case 'cheat':                       this._play(s.cheat);      break;
-            case 'power-up':                    this._play(s.powerUp);    break;
-            case 'turn':                        this._play(s.turn);       break;
-            case 'hp-red':                      this._play(s.hpRed);      break;
-            case 'atk-show': case 'def-show':   this._play(s.diceCount);  break;
+            case 'hover': case 'cursor':        this._playSE('cursor');      break;
+            case 'click': case 'confirm':       this._playSE('btnSelect');   break;
+            case 'select':                      this._playSE('btnSelect');   break;
+            case 'deselect': case 'cancel':     this._playSE('cancel');      break;
+            case 'roll':    case 'reroll':      this._playSE('diceRoll');    break;
+            case 'dice-select':                 this._playSE('diceSelect');  break;
+            case 'damage':                      this._playSE('damage');      break;
+            case 'shield':  case 'no-damage':   this._playSE('noDamage');    break;
+            case 'sp-damage':                   this._playSE('spDamage');    break;
+            case 'clash':       this._playSE(Math.random()<0.5?'attack1':'attack2'); break;
+            case 'battle-start':                this._playSE('battleStart'); break;
+            case 'coin':                        this._playSE('coinToss');    break;
+            case 'coin-finish':                 this._playSE('coinFinish');  break;
+            case 'win':                         this._playSE('win');         break;
+            case 'lose':                        this._playSE('lose');        break;
+            case 'cure':                        this._playSE('cure');        break;
+            case 'cheat':                       this._playSE('cheat');       break;
+            case 'power-up':                    this._playSE('powerUp');     break;
+            case 'turn':                        this._playSE('turn');        break;
+            case 'hp-red':                      this._playSE('hpRed');       break;
+            case 'atk-show': case 'def-show':   this._playSE('diceCount');   break;
         }
-    },
+    }
 
+    // BGM再生 (ループ対応, フェードイン)
     playBgm(which){
         if(!this.bgmOn) return;
-        const bgm=this._bgm[which];
-        if(!bgm) return;
-        // 同じBGMが既に再生中ならスキップ（画面遷移で途切れないようにする）
-        if(this.currentBgm===bgm && !bgm.paused) return;
+        const bufName = which === 'battle' ? 'bgm_battle' : 'bgm_title';
+        if(!this.ctx || !this._buffers[bufName]) return;
+        // 同じBGMが既に再生中ならスキップ
+        if(this._currentBgmName === bufName && this._bgmSource) return;
         this.stopBgm();
-        bgm.currentTime=0; bgm.volume=0;
-        bgm.play().catch(()=>{});
-        this.currentBgm=bgm;
-        let vol=0;
-        const fade=setInterval(()=>{
-            vol=Math.min(vol+0.02,0.3);
-            if(this.currentBgm) this.currentBgm.volume=vol;
-            if(vol>=0.3) clearInterval(fade);
-        },50);
-    },
+        if(this.ctx.state === 'suspended') this.ctx.resume().catch(()=>{});
+        const source = this.ctx.createBufferSource();
+        source.buffer = this._buffers[bufName];
+        source.loop = true;
+        const gainNode = this.ctx.createGain();
+        gainNode.gain.setValueAtTime(0, this.ctx.currentTime);
+        // フェードイン: 0 → 0.3 を0.75秒かけて
+        gainNode.gain.linearRampToValueAtTime(0.3, this.ctx.currentTime + 0.75);
+        source.connect(gainNode).connect(this.ctx.destination);
+        source.start(0);
+        this._bgmSource = source;
+        this._bgmGain = gainNode;
+        this._currentBgmName = bufName;
+        // mediaSession非表示維持
+        if('mediaSession' in navigator){
+            navigator.mediaSession.playbackState = 'none';
+        }
+    }
 
     stopBgm(){
-        Object.values(this._bgm).forEach(a=>{ if(a){ a.pause(); a.currentTime=0; } });
-        this.currentBgm=null;
-    },
+        if(this._bgmSource){
+            try{ this._bgmSource.stop(0); }catch(e){}
+            this._bgmSource.disconnect();
+            this._bgmSource = null;
+        }
+        if(this._bgmGain){
+            this._bgmGain.disconnect();
+            this._bgmGain = null;
+        }
+        this._currentBgmName = null;
+    }
 
     toggleBgm(on){
-        this.bgmOn=on;
+        this.bgmOn = on;
         if(!on) this.stopBgm();
         else{
-            const scr=typeof GS!=='undefined'?GS.currentScreen:'title';
-            this.playBgm(scr==='battle'?'battle':'title');
+            const scr = typeof GS !== 'undefined' ? GS.currentScreen : 'title';
+            this.playBgm(scr === 'battle' ? 'battle' : 'title');
         }
-    },
-    toggleSe(on){ this.seOn=on; },
-};
+    }
 
-// 初回インタラクションでオーディオ初期化+BGM開始 (Safari iOS対応)
-// Safariはユーザージェスチャー内で.play()しないとオーディオがアンロックされない
-function _unlockAudio(){
-    AudioSys.init();
-    // 現在の画面に応じたBGMを再生開始
-    const scr=typeof GS!=='undefined'?GS.currentScreen:'title';
-    AudioSys.playBgm(scr==='battle'?'battle':'title');
+    toggleSe(on){ this.seOn = on; }
+
+    // 後方互換: AudioSys.init() 呼び出し箇所のため
+    init(){ /* SoundManagerではpreload()で代替。ここは何もしない */ }
 }
-document.addEventListener('click',_unlockAudio,{ once:true });
-document.addEventListener('touchstart',_unlockAudio,{ once:true });
+
+// グローバルインスタンス生成 & 後方互換エイリアス
+const AudioSys = new SoundManager();
+
+// 初回インタラクションでオーディオ unlock + プリロード + BGM開始 (Safari iOS対応)
+async function _unlockAudio(){
+    await AudioSys.unlock();
+    await AudioSys.preload();
+    // 現在の画面に応じたBGMを再生開始
+    const scr = typeof GS !== 'undefined' ? GS.currentScreen : 'title';
+    AudioSys.playBgm(scr === 'battle' ? 'battle' : 'title');
+}
+document.addEventListener('click', _unlockAudio, { once: true });
+document.addEventListener('touchstart', _unlockAudio, { once: true });
 
 // Settings toggles
-document.addEventListener('DOMContentLoaded',()=>{
-    const bgmToggle=document.getElementById('toggle-bgm');
-    const seToggle=document.getElementById('toggle-se');
+document.addEventListener('DOMContentLoaded', () => {
+    const bgmToggle = document.getElementById('toggle-bgm');
+    const seToggle  = document.getElementById('toggle-se');
     if(bgmToggle){
-        bgmToggle.addEventListener('change',()=>{
+        bgmToggle.addEventListener('change', () => {
             AudioSys.toggleBgm(bgmToggle.checked);
         });
     }
     if(seToggle){
-        seToggle.addEventListener('change',()=>AudioSys.toggleSe(seToggle.checked));
+        seToggle.addEventListener('change', () => AudioSys.toggleSe(seToggle.checked));
     }
 });
 
