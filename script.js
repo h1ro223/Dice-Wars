@@ -1,5 +1,5 @@
 /* ============================================
-   サイコロ・ウォーズ v1.5.1 - script.js
+   サイコロ・ウォーズ v1.6 - script.js
    ============================================ */
 
 // ========== サーバーURL設定 (ここを変更すればデフォルトURLが変わります) ==========
@@ -270,53 +270,60 @@ document.addEventListener('mouseout', (e) => {
 // ============ キャラカードデータ ============
 const CHARACTERS = [
     {
-        id:1, name:'ガルム', emoji:'🐺', hp:22, atk:3, def:2,
+        id:1, name:'ガルム', emoji:'🐺', hp:24, atk:3, def:3,
         dice:[{type:6,label:'6D'},{type:6,label:'6D'},{type:4,label:'4D'},{type:4,label:'4D'}],
-        abilityDesc:'攻撃時、選択したサイコロに同じ出目がある場合、ダメージ+3。その同じ出目が4の場合、ダメージ+7。',
+        abilityDesc:'攻撃時、選択したサイコロに同じ出目がある場合、ダメージ+2。その同じ出目が4の場合、ダメージ+5。',
         abilityType:'attack',
-        ability(sel){ let b=0,d=[]; const c={}; sel.forEach(s=>{c[s.value]=(c[s.value]||0)+1}); for(const[v,n]of Object.entries(c)){if(n>=2){if(+v===4){b+=7;d.push(`出目4のペア！ ダメージ+7`)}else{b+=3;d.push(`出目${v}のペア！ ダメージ+3`)}}} return{bonus:b,desc:d}; }
+        ability(sel){ let b=0,d=[]; const c={}; sel.forEach(s=>{c[s.value]=(c[s.value]||0)+1}); for(const[v,n]of Object.entries(c)){if(n>=2){if(+v===4){b+=5;d.push(`出目4のペア！ ダメージ+5`)}else{b+=2;d.push(`出目${v}のペア！ ダメージ+2`)}}} return{bonus:b,desc:d}; }
     },
     {
         id:2, name:'ホースラ', emoji:'🦊', hp:25, atk:3, def:3,
-        dice:[{type:8,label:'8D'},{type:4,label:'4D'},{type:4,label:'4D'},{type:4,label:'4D'}],
+        dice:[{type:6,label:'6D'},{type:4,label:'4D'},{type:4,label:'4D'},{type:4,label:'4D'}],
         abilityDesc:'防御時、リロールチャンスを1回獲得する。また、防御時に選んだサイコロに同じ出目がある場合、ただちに相手に4の即時ダメージを与える。',
         abilityType:'defense', defenseReroll:1,
         ability(sel){ let id=0,d=[]; const c={}; sel.forEach(s=>{c[s.value]=(c[s.value]||0)+1}); for(const[,n]of Object.entries(c)){if(n>=2){id+=4;d.push(`防御時ペア発動！ 相手に即時4ダメージ！`)}} return{bonus:0,desc:d,instantDamage:id}; }
     },
     {
-        id:3, name:'ジャスパー', emoji:'🦁', hp:25, atk:3, def:2,
+        id:3, name:'ジャスパー', emoji:'🦁', hp:24, atk:4, def:2,
         dice:[{type:6,label:'6D'},{type:6,label:'6D'},{type:4,label:'4D'},{type:4,label:'4D'},{type:4,label:'4D'}],
-        abilityDesc:'攻撃時、選択したサイコロに同じ出目が2つある場合、ダメージ+5。同じ出目が1つ増えるたびに、ダメージがさらに+3。',
+        abilityDesc:'攻撃時、選択したサイコロに同じ出目が2つある場合、ダメージ+3。同じ出目が1つ増えるたびに、ダメージがさらに+4。(最大追加ダメージ+11)',
         abilityType:'attack',
-        ability(sel){ let b=0,d=[]; const c={}; sel.forEach(s=>{c[s.value]=(c[s.value]||0)+1}); for(const[v,n]of Object.entries(c)){if(n>=2){const x=5+3*(n-2);b+=x;d.push(`出目${v}が${n}つ！ ダメージ+${x}`)}} return{bonus:b,desc:d}; }
+        ability(sel){ let b=0,d=[]; const c={}; sel.forEach(s=>{c[s.value]=(c[s.value]||0)+1}); let applied=false; for(const[v,n]of Object.entries(c)){if(n>=2&&!applied){const x=3+4*(n-2);const capped=Math.min(x,11);b+=capped;d.push(`出目${v}が${n}つ！ ダメージ+${capped}`);applied=true;}} return{bonus:b,desc:d}; }
     },
     {
         id:4, name:'クライシス', emoji:'🐉', hp:25, atk:3, def:2,
-        dice:[{type:6,label:'6D'},{type:6,label:'6D'},{type:6,label:'6D'},{type:4,label:'4D'},{type:4,label:'4D'}],
-        abilityDesc:'攻撃時、自身のHPが15以下の場合、"イカサマ"が付与される。相手の選択サイコロの最大出目を2にする。',
-        abilityType:'attack_special',
-        ability(sel,hp){ let d=[]; const a=hp<=15; if(a)d.push(`イカサマ発動！ 相手の最大防御出目を2に！`); return{bonus:0,desc:d,cheat:a}; }
+        dice:[{type:8,label:'8D'},{type:6,label:'6D'},{type:6,label:'6D'},{type:4,label:'4D'},{type:4,label:'4D'}],
+        abilityDesc:'自身のHPが15以下の場合、"イカサマ"が付与される。相手の選択サイコロの最大出目を3にする。(攻防両方で発動)',
+        abilityType:'cheat_both',
+        ability(sel,hp){ let d=[]; const a=hp<=15; if(a)d.push(`イカサマ発動！ 相手の最大出目を3に！`); return{bonus:0,desc:d,cheat:a}; }
     },
     {
         id:5, name:'ドラン', emoji:'🐲', hp:26, atk:4, def:3,
         dice:[{type:6,label:'6D'},{type:4,label:'4D'},{type:4,label:'4D'},{type:4,label:'4D'},{type:4,label:'4D'}],
-        abilityDesc:'防御時、ダメージを受けた場合相手に2の即時ダメージ。防御サイコロが全て奇数なら代わりに4の即時ダメージ。',
+        abilityDesc:'防御時、ダメージを受けた場合相手に1の即時ダメージ。防御サイコロが全て奇数なら代わりに4の即時ダメージ。',
         abilityType:'defense_doran',
-        ability(sel,dmg){ let id=0,d=[]; if(dmg>0){const allOdd=sel.every(s=>s.value%2===1);if(allOdd){id=4;d.push(`全て奇数！ 相手に即時4ダメージ！`)}else{id=2;d.push(`ダメージ反射！ 相手に即時2ダメージ！`)}} return{bonus:0,desc:d,instantDamage:id}; }
+        ability(sel,dmg){ let id=0,d=[]; if(dmg>0){const allOdd=sel.every(s=>s.value%2===1);if(allOdd){id=4;d.push(`全て奇数！ 相手に即時4ダメージ！`)}else{id=1;d.push(`ダメージ反射！ 相手に即時1ダメージ！`)}} return{bonus:0,desc:d,instantDamage:id}; }
     },
     {
-        id:6, name:'ライアン', emoji:'🦅', hp:24, atk:4, def:3,
+        id:6, name:'ライアン', emoji:'🦅', hp:25, atk:3, def:3,
         dice:[{type:6,label:'6D'},{type:6,label:'6D'},{type:4,label:'4D'},{type:4,label:'4D'},{type:4,label:'4D'}],
-        abilityDesc:'防御時、リロール1回獲得。ダメージ0ならHP5回復。ターン終了時HP5以下ならDEF+1(HP6以上で解除)。',
+        abilityDesc:'防御時、リロール1回獲得。防御時にダメージ0ならHP3回復(回復は1ゲームに2回まで)。ターン終了時HP5以下ならDEF+1(HP6以上で解除)。',
         abilityType:'defense_ryan', defenseReroll:1,
-        ability(sel,dmg){ let d=[],heal=0; if(dmg===0){heal=5;d.push(`ダメージ無効！ HP5回復！`)} return{bonus:0,desc:d,heal:heal}; }
+        ability(sel,dmg){ let d=[],heal=0; if(dmg===0){heal=3;d.push(`ダメージ無効！ HP3回復！`)} return{bonus:0,desc:d,heal:heal}; }
     },
     {
         id:7, name:'オーガスト', emoji:'🐻', hp:25, atk:3, def:2,
         dice:[{type:6,label:'6D'},{type:6,label:'6D'},{type:4,label:'4D'},{type:4,label:'4D'},{type:4,label:'4D'}],
-        abilityDesc:'攻撃後パワー1層獲得。全て偶数なら代わりに3層。次の攻撃時にパワー層数ぶんダメージ加算。',
+        abilityDesc:'攻撃後パワー2層獲得。全て偶数なら代わりに4層。次の攻撃時にパワー層数ぶんダメージ加算・消費。(最大4層)',
         abilityType:'attack_august',
-        ability(sel){ const allEven=sel.every(s=>s.value%2===0); return{stacks:allEven?3:1,desc:allEven?[`全て偶数！ パワー3層獲得！`]:[`パワー1層獲得！`]}; }
+        ability(sel){ const allEven=sel.every(s=>s.value%2===0); return{stacks:allEven?4:2,desc:allEven?[`全て偶数！ パワー4層獲得！`]:[`パワー2層獲得！`]}; }
+    },
+    {
+        id:8, name:'ミラクル', emoji:'🦄', hp:24, atk:4, def:4,
+        dice:[{type:4,label:'4D'},{type:4,label:'4D'},{type:4,label:'4D'},{type:4,label:'4D'},{type:4,label:'4D'}],
+        abilityDesc:'選択サイコロが全て4なら相手のHPを4にする(4以下なら不発)。ダメージ無効。攻撃時のみ、全て4でない場合は自分に即時4ダメージ(HP4以下なら不発)。(攻防両方発動)',
+        abilityType:'miracle',
+        ability(sel){ const allFour=sel.every(s=>s.value===4); return{allFour,desc:allFour?[`全て4！ ミラクル発動！`]:[]}; }
     }
 ];
 
@@ -338,10 +345,15 @@ const GS = {
     // v1.5: HP赤フラグ
     _p1HpWasRed:false, _p2HpWasRed:false,
     // v1.5.1: ターン管理 (1ターン=両者攻防)
-    _turnFirstAttacker:true, // このターンの最初の攻撃者がp1かどうか
-    _turnHalf:0, // 0=前半(1人目の攻防), 1=後半(2人目の攻防)
+    _turnFirstAttacker:true,
+    _turnHalf:0,
+    // v1.6: 新ステート
+    ryanHealCount:{p1:0,p2:0},
+    augustConsumedThisTurn:{p1:false,p2:false},
+    deckStep:1, p1Random:false, p2Random:false,
+    miracleDmgOverride:false,
     // オンライン
-    onlineRole:null, // 'host' | 'guest'
+    onlineRole:null,
     onlineReady:{p1:false,p2:false},
 };
 
@@ -368,10 +380,11 @@ $('btn-how-to-play').addEventListener('click',()=>{AudioSys.playSe('click');$('h
 $('btn-howto-battle').addEventListener('click',()=>{AudioSys.playSe('click');$('howto-modal').classList.remove('hidden')});
 $('btn-update-log').addEventListener('click',()=>{AudioSys.playSe('click');$('update-log-modal').classList.remove('hidden')});
 $('btn-about').addEventListener('click',()=>{AudioSys.playSe('click');$('about-modal').classList.remove('hidden')});
+$('btn-news').addEventListener('click',()=>{AudioSys.playSe('click');$('news-modal').classList.remove('hidden')});
 $('btn-settings').addEventListener('click',()=>{AudioSys.playSe('click');$('settings-modal').classList.remove('hidden');$('btn-quit-game').style.display='';});
 $('btn-quit-game').addEventListener('click',()=>{AudioSys.playSe('click');$('settings-modal').classList.add('hidden');$('quit-confirm-modal').classList.remove('hidden');});
 $('btn-quit-cancel').addEventListener('click',()=>{AudioSys.playSe('click');$('quit-confirm-modal').classList.add('hidden')});
-$('btn-quit-confirm').addEventListener('click',()=>{AudioSys.playSe('confirm');$('quit-confirm-modal').classList.add('hidden');GS.p1Char=null;GS.p2Char=null;showScreen('title');});
+$('btn-quit-confirm').addEventListener('click',()=>{AudioSys.playSe('confirm');$('quit-confirm-modal').classList.add('hidden');resetBattleState();GS.p1Char=null;GS.p2Char=null;showScreen('title');});
 $('btn-page-refresh').addEventListener('click',()=>{location.reload();});
 
 document.querySelectorAll('.modal-close-btn').forEach(b=>{b.addEventListener('click',()=>{AudioSys.playSe('click');const id=b.dataset.close;if(id)$(id).classList.add('hidden');});});
@@ -380,26 +393,68 @@ document.querySelectorAll('.modal-overlay').forEach(o=>{o.addEventListener('clic
 // ============ Deck Screen ============
 function showDeckScreen(){
     showScreen('deck');GS.p1Char=null;GS.p2Char=null;GS.cpuOpponentChoice=null;
-    if(GS.mode==='cpu'){
-        $('deck-title').textContent='デッキ選択 - VS CPU';
-        $('deck-subtitle').textContent='自分と相手のキャラカードを選ぼう！';
-        $('deck-player-label').textContent='自分のキャラカード';
-        $('opponent-deck-section').classList.remove('hidden');
-        $('p2-deck-section').classList.add('hidden');
-        renderCards('char-cards-grid','p1');renderOpponentCards();
-    } else {
-        $('deck-title').textContent='デッキ選択 - マルチプレイ';
-        $('deck-subtitle').textContent='1Pと2Pのキャラカードを選ぼう！';
-        $('deck-player-label').textContent='1Pのキャラカード';
-        $('opponent-deck-section').classList.add('hidden');
-        $('p2-deck-section').classList.remove('hidden');
-        renderCards('char-cards-grid','p1');renderCards('p2-cards-grid','p2');
-    }
-    $('btn-battle-start').disabled=true;hideDetail();
+    GS.p1Random=false;GS.p2Random=false;GS.deckStep=1;
+    showDeckStep1();
 }
 
-function renderCards(gridId,role){
+function showDeckStep1(){
+    GS.deckStep=1;
+    if(GS.mode==='cpu'){
+        $('deck-title').textContent='デッキ選択 - VS CPU';
+        $('deck-subtitle').textContent='自分のキャラカードを選ぶ';
+        $('deck-player-label').textContent='自分のキャラカード';
+    } else {
+        $('deck-title').textContent='デッキ選択 - マルチプレイ';
+        $('deck-subtitle').textContent='1Pのキャラカードを選ぶ';
+        $('deck-player-label').textContent='1Pのキャラカード';
+    }
+    $('p1-deck-section').classList.remove('hidden');
+    $('opponent-deck-section').classList.add('hidden');
+    $('p2-deck-section').classList.add('hidden');
+    renderCards('char-cards-grid','p1',true);
+    // Re-apply p1 selection if already chosen (back from step 2)
+    if(GS.p1Char){
+        const g=$('char-cards-grid');
+        g.querySelectorAll('.char-card').forEach(c=>c.classList.toggle('selected',+c.dataset.charId===GS.p1Char.id));
+    } else if(GS.p1Random){
+        const g=$('char-cards-grid');
+        g.querySelectorAll('.char-card').forEach(c=>c.classList.toggle('selected',c.dataset.charId==='random'));
+    }
+    $('btn-battle-start').classList.add('hidden');
+    $('btn-deck-next').classList.remove('hidden');
+    $('btn-deck-next').disabled=!(GS.p1Char||GS.p1Random);
+    $('btn-back-title').textContent='戻る';
+    hideDetail();
+}
+
+function showDeckStep2(){
+    GS.deckStep=2;
+    $('p1-deck-section').classList.add('hidden');
+    $('btn-deck-next').classList.add('hidden');
+    $('btn-battle-start').classList.remove('hidden');
+    $('btn-battle-start').disabled=true;
+    $('btn-back-title').textContent='← 戻る';
+    if(GS.mode==='cpu'){
+        $('deck-subtitle').textContent='相手のキャラカードを選ぶ';
+        $('opponent-deck-section').classList.remove('hidden');
+        $('p2-deck-section').classList.add('hidden');
+        renderOpponentCards();
+    } else {
+        $('deck-subtitle').textContent='2Pのキャラカードを選ぶ';
+        $('opponent-deck-section').classList.add('hidden');
+        $('p2-deck-section').classList.remove('hidden');
+        renderCards('p2-cards-grid','p2',true);
+    }
+    hideDetail();
+}
+
+function renderCards(gridId,role,includeRandom=false){
     const g=$(gridId);g.innerHTML='';
+    if(includeRandom){
+        const rc=document.createElement('div');rc.className='char-card random-card';rc.dataset.charId='random';rc.dataset.role=role;
+        rc.innerHTML=`<div class="char-emoji">❓</div><div class="char-card-name">おまかせ</div><div class="char-card-stats"><span>ランダム</span></div>`;
+        rc.addEventListener('click',()=>selectCard('random',role,gridId));g.appendChild(rc);
+    }
     CHARACTERS.forEach(ch=>{
         const c=document.createElement('div');c.className='char-card';c.dataset.charId=ch.id;c.dataset.role=role;
         c.innerHTML=`<div class="char-emoji">${ch.emoji}</div><div class="char-card-name">${ch.name}</div><div class="char-card-stats"><span>❤️${ch.hp}</span><span>⚔️${ch.atk}</span><span>🛡️${ch.def}</span></div><div class="char-card-dice-preview">${ch.dice.map(d=>`<div class="mini-dice d${d.type}">${d.type}D</div>`).join('')}</div>`;
@@ -410,7 +465,7 @@ function renderCards(gridId,role){
 function renderOpponentCards(){
     const g=$('opponent-cards-grid');g.innerHTML='';
     const rc=document.createElement('div');rc.className='char-card random-card';rc.dataset.charId='random';rc.dataset.role='cpu-opponent';
-    rc.innerHTML=`<div class="char-emoji">❓</div><div class="char-card-name">ランダム</div><div class="char-card-stats"><span>おまかせ</span></div>`;
+    rc.innerHTML=`<div class="char-emoji">❓</div><div class="char-card-name">おまかせ</div><div class="char-card-stats"><span>ランダム</span></div>`;
     rc.addEventListener('click',()=>selectCard('random','cpu-opponent','opponent-cards-grid'));g.appendChild(rc);
     CHARACTERS.forEach(ch=>{
         const c=document.createElement('div');c.className='char-card';c.dataset.charId=ch.id;c.dataset.role='cpu-opponent';
@@ -422,11 +477,23 @@ function renderOpponentCards(){
 function selectCard(cid,role,gid){
     const g=$(gid);
     if(role==='p1'){
-        if(GS.p1Char&&GS.p1Char.id===cid){GS.p1Char=null;g.querySelectorAll('.char-card').forEach(c=>c.classList.remove('selected'));hideDetail();checkReady();return;}
-        GS.p1Char=CHARACTERS.find(c=>c.id===cid);g.querySelectorAll('.char-card').forEach(c=>c.classList.toggle('selected',+c.dataset.charId===cid));showDetail(GS.p1Char);
+        if(cid==='random'){
+            if(GS.p1Random){GS.p1Random=false;GS.p1Char=null;g.querySelectorAll('.char-card').forEach(c=>c.classList.remove('selected'));hideDetail();checkReady();return;}
+            GS.p1Random=true;GS.p1Char=null;g.querySelectorAll('.char-card').forEach(c=>c.classList.toggle('selected',c.dataset.charId==='random'));hideDetail();
+        } else {
+            GS.p1Random=false;
+            if(GS.p1Char&&GS.p1Char.id===cid){GS.p1Char=null;g.querySelectorAll('.char-card').forEach(c=>c.classList.remove('selected'));hideDetail();checkReady();return;}
+            GS.p1Char=CHARACTERS.find(c=>c.id===cid);g.querySelectorAll('.char-card').forEach(c=>c.classList.toggle('selected',+c.dataset.charId===cid));showDetail(GS.p1Char);
+        }
     } else if(role==='p2'){
-        if(GS.p2Char&&GS.p2Char.id===cid){GS.p2Char=null;g.querySelectorAll('.char-card').forEach(c=>c.classList.remove('selected'));hideDetail();checkReady();return;}
-        GS.p2Char=CHARACTERS.find(c=>c.id===cid);g.querySelectorAll('.char-card').forEach(c=>c.classList.toggle('selected',+c.dataset.charId===cid));showDetail(GS.p2Char);
+        if(cid==='random'){
+            if(GS.p2Random){GS.p2Random=false;GS.p2Char=null;g.querySelectorAll('.char-card').forEach(c=>c.classList.remove('selected'));hideDetail();checkReady();return;}
+            GS.p2Random=true;GS.p2Char=null;g.querySelectorAll('.char-card').forEach(c=>c.classList.toggle('selected',c.dataset.charId==='random'));hideDetail();
+        } else {
+            GS.p2Random=false;
+            if(GS.p2Char&&GS.p2Char.id===cid){GS.p2Char=null;g.querySelectorAll('.char-card').forEach(c=>c.classList.remove('selected'));hideDetail();checkReady();return;}
+            GS.p2Char=CHARACTERS.find(c=>c.id===cid);g.querySelectorAll('.char-card').forEach(c=>c.classList.toggle('selected',+c.dataset.charId===cid));showDetail(GS.p2Char);
+        }
     } else if(role==='cpu-opponent'){
         if(GS.cpuOpponentChoice===cid){GS.cpuOpponentChoice=null;GS.p2Char=null;g.querySelectorAll('.char-card').forEach(c=>c.classList.remove('selected'));hideDetail();checkReady();return;}
         GS.cpuOpponentChoice=cid;
@@ -436,27 +503,62 @@ function selectCard(cid,role,gid){
     checkReady();
     AudioSys.playSe('select');
 }
-function checkReady(){$('btn-battle-start').disabled=GS.mode==='cpu'?!(GS.p1Char&&GS.cpuOpponentChoice!==null):!(GS.p1Char&&GS.p2Char);}
+function checkReady(){
+    if(GS.deckStep===0) return; // online mode
+    if(GS.deckStep===1){
+        $('btn-deck-next').disabled=!(GS.p1Char||GS.p1Random);
+    } else {
+        if(GS.mode==='cpu') $('btn-battle-start').disabled=!(GS.cpuOpponentChoice!==null);
+        else $('btn-battle-start').disabled=!(GS.p2Char||GS.p2Random);
+    }
+}
 function showDetail(ch){if(!ch)return;$('detail-name').textContent=ch.name;$('detail-hp').textContent=ch.hp;$('detail-atk').textContent=ch.atk;$('detail-def').textContent=ch.def;$('detail-dice-list').innerHTML=ch.dice.map(d=>`<div class="mini-dice d${d.type}" style="width:24px;height:24px;font-size:10px;">${d.label}</div>`).join('');$('detail-ability-text').textContent=ch.abilityDesc;$('char-detail-panel').classList.remove('hidden');}
 function hideDetail(){$('char-detail-panel').classList.add('hidden');}
 
 $('btn-close-detail').addEventListener('click',()=>{AudioSys.playSe('click');hideDetail();});
 $('btn-detail-ok').addEventListener('click',()=>{AudioSys.playSe('click');hideDetail();});
-$('btn-back-title').addEventListener('click',()=>{AudioSys.playSe('click');GS.p1Char=null;GS.p2Char=null;hideDetail();showScreen('title');});
+$('btn-back-title').addEventListener('click',()=>{
+    AudioSys.playSe('click');
+    if(GS.deckStep===2){
+        GS.cpuOpponentChoice=null;GS.p2Char=null;GS.p2Random=false;
+        showDeckStep1();
+        return;
+    }
+    GS.p1Char=null;GS.p2Char=null;GS.p1Random=false;GS.p2Random=false;
+    hideDetail();showScreen('title');
+});
+$('btn-deck-next').addEventListener('click',()=>{
+    if(!(GS.p1Char||GS.p1Random))return;
+    AudioSys.playSe('confirm');hideDetail();showDeckStep2();
+});
 $('btn-battle-start').addEventListener('click',()=>{
-    if(GS.mode==='online')return; // オンラインは別リスナーで処理
-    if(GS.mode==='cpu'&&!GS.p1Char)return;
-    if(GS.mode==='multi'&&(!GS.p1Char||!GS.p2Char))return;
+    if(GS.mode==='online')return;
+    if(GS.mode==='cpu'&&GS.cpuOpponentChoice===null)return;
+    if(GS.mode==='multi'&&!GS.p2Char&&!GS.p2Random)return;
     AudioSys.playSe('battle-start');hideDetail();startBattle();
 });
 
 // ============ Battle ============
 function startBattle(){
-    if(GS.mode==='cpu'&&GS.cpuOpponentChoice==='random'){const a=CHARACTERS.filter(c=>c.id!==GS.p1Char.id);GS.p2Char=a[Math.floor(Math.random()*a.length)];}
+    // Resolve random selections
+    if(GS.p1Random){
+        GS.p1Char=CHARACTERS[Math.floor(Math.random()*CHARACTERS.length)];
+    }
+    if(GS.mode==='cpu'&&GS.cpuOpponentChoice==='random'){
+        const a=CHARACTERS.filter(c=>c.id!==(GS.p1Char?GS.p1Char.id:-1));
+        GS.p2Char=a[Math.floor(Math.random()*a.length)];
+    } else if(GS.p2Random){
+        const a=CHARACTERS.filter(c=>c.id!==(GS.p1Char?GS.p1Char.id:-1));
+        GS.p2Char=a[Math.floor(Math.random()*a.length)];
+    }
     GS.p1Hp=GS.p1Char.hp;GS.p1MaxHp=GS.p1Char.hp;GS.p2Hp=GS.p2Char.hp;GS.p2MaxHp=GS.p2Char.hp;GS.turn=1;GS.animating=false;
     GS.powerStacks={p1:0,p2:0};GS.ryanDefBuff={p1:false,p2:false};GS._lastDmg=0;
-    GS._p1HpWasRed=false;GS._p2HpWasRed=false; // v1.5: HP赤フラグリセット
-    GS._turnHalf=0; // v1.5.1: ターン前半からスタート
+    GS._p1HpWasRed=false;GS._p2HpWasRed=false;
+    GS._turnHalf=0;
+    // v1.6: 新ステート初期化
+    GS.ryanHealCount={p1:0,p2:0};
+    GS.augustConsumedThisTurn={p1:false,p2:false};
+    GS.miracleDmgOverride=false;
     showScreen('battle');
     $('action-panel-right').classList.remove('hidden');
     updateBattleUI();showCoinFlip();
@@ -575,6 +677,10 @@ function showTurnStart(cb){
 function startAttackPhase(){
     GS.phase='attack';updatePhaseUI();setPhaseGlow();
     const ac=atkChar();GS.maxSelections=ac.atk;
+    // v1.6: Reset August consumed flag + miracle override
+    const atkKeyAug=GS.p1IsAttacker?'p1':'p2';
+    GS.augustConsumedThisTurn[atkKeyAug]=false;
+    GS.miracleDmgOverride=false;
     if(GS.mode==='cpu'){
         if(GS.p1IsAttacker) setupP1Dice(ac,true);
         else cpuPhase(ac,'attack');
@@ -740,7 +846,27 @@ $('btn-confirm').addEventListener('click',()=>{
     $('btn-reroll').disabled=true;
     const selectedData=sel.map(d=>({type:d.type,value:d.value}));
     if(GS.mode==='online')sendAction({type:'confirm',phase:GS.phase,selectedDice:selectedData});
-    if(GS.phase==='attack'){GS.attackerSelectedDice=selectedData;startDefensePhase();}
+    if(GS.phase==='attack'){
+        GS.attackerSelectedDice=selectedData;
+        // ミラクル攻撃時: 全4でなければ即時自傷 (HP>4のみ)
+        const ac=atkChar();
+        if(ac.abilityType==='miracle'){
+            const allFour=selectedData.every(d=>d.value===4);
+            if(!allFour){
+                const myHp=GS.p1IsAttacker?GS.p1Hp:GS.p2Hp;
+                if(myHp>4){
+                    if(GS.p1IsAttacker) GS.p1Hp=Math.max(0,GS.p1Hp-4);
+                    else GS.p2Hp=Math.max(0,GS.p2Hp-4);
+                    AudioSys.playSe('sp-damage');
+                    updateBattleUI();
+                    showAbility('全て4でない！ 自分に即時4ダメージ！');
+                    setTimeout(()=>{hideAbility();startDefensePhase();},1500);
+                    return;
+                }
+            }
+        }
+        startDefensePhase();
+    }
     else{GS.defenderSelectedDice=selectedData;startDamageCalc();}
 });
 
@@ -781,9 +907,32 @@ function cpuPhase(ch,type){
             function selectNext(){
                 if(selIdx>=toSelect.length){
                     const selected=toSelect.map(d=>({type:d.type,value:d.value}));
-                    if(isAtk)GS.attackerSelectedDice=selected;else GS.defenderSelectedDice=selected;
-                    GS.currentActorIsHuman=true;GS.animating=false;
-                    setTimeout(()=>{if(isAtk)startDefensePhase();else startDamageCalc();},600);
+                    if(isAtk){
+                        GS.attackerSelectedDice=selected;
+                        // ミラクルCPU攻撃時: 全4でなければ即時自傷 (HP>4のみ)
+                        const cpuChar=GS.p1IsAttacker?GS.p1Char:GS.p2Char;
+                        if(cpuChar.abilityType==='miracle'){
+                            const allFour=selected.every(d=>d.value===4);
+                            if(!allFour){
+                                const myHp=GS.p1IsAttacker?GS.p1Hp:GS.p2Hp;
+                                if(myHp>4){
+                                    if(GS.p1IsAttacker) GS.p1Hp=Math.max(0,GS.p1Hp-4);
+                                    else GS.p2Hp=Math.max(0,GS.p2Hp-4);
+                                    AudioSys.playSe('sp-damage');
+                                    updateBattleUI();
+                                    showAbility('全て4でない！ 自分に即時4ダメージ！');
+                                    setTimeout(()=>{hideAbility();GS.currentActorIsHuman=true;GS.animating=false;startDefensePhase();},1500);
+                                    return;
+                                }
+                            }
+                        }
+                        GS.currentActorIsHuman=true;GS.animating=false;
+                        setTimeout(()=>startDefensePhase(),600);
+                    } else {
+                        GS.defenderSelectedDice=selected;
+                        GS.currentActorIsHuman=true;GS.animating=false;
+                        setTimeout(()=>startDamageCalc(),600);
+                    }
                     return;
                 }
                 const d=toSelect[selIdx];d.selected=true;
@@ -818,47 +967,116 @@ function startDamageCalc(){
     let atkTotal=GS.attackerSelectedDice.reduce((s,d)=>s+d.value,0);
     let defTotal=GS.defenderSelectedDice.reduce((s,d)=>s+d.value,0);
     let atkBonus=0,abilDescs=[],instantDmg=0;
+    let miracleOverride=false;
 
-    // オーガスト: パワー消費
-    if(ac.id===7){
+    // ======= ミラクル能力 (攻撃側) - HP4化のみ (自傷はconfirm時に処理済み) =======
+    if(ac.abilityType==='miracle'){
+        const allFour=GS.attackerSelectedDice.every(d=>d.value===4);
+        if(allFour){
+            const defHpNow=GS.p1IsAttacker?GS.p2Hp:GS.p1Hp;
+            if(defHpNow>4){
+                if(GS.p1IsAttacker) GS.p2Hp=4; else GS.p1Hp=4;
+                miracleOverride=true;
+                abilDescs.push('ミラクル発動！ 相手のHPを4に！');
+                AudioSys.playSe('sp-damage');
+                updateBattleUI();
+            }
+        }
+    }
+
+    // ======= ミラクル能力 (防御側) - HP4化のみ (防御時は自傷なし) =======
+    if(dc.abilityType==='miracle'){
+        const allFour=GS.defenderSelectedDice.every(d=>d.value===4);
+        if(allFour){
+            const atkHpNow=GS.p1IsAttacker?GS.p1Hp:GS.p2Hp;
+            if(atkHpNow>4){
+                if(GS.p1IsAttacker) GS.p1Hp=4; else GS.p2Hp=4;
+                miracleOverride=true;
+                abilDescs.push('ミラクル発動！ 攻撃側のHPを4に！');
+                AudioSys.playSe('sp-damage');
+                updateBattleUI();
+            }
+        }
+    }
+
+    // ======= クライシス イカサマ (攻撃側) =======
+    if(ac.abilityType==='cheat_both'){
+        const hp=GS.p1IsAttacker?GS.p1Hp:GS.p2Hp;
+        if(hp<=15&&GS.defenderSelectedDice.length>0){
+            let mi=0,mv=0;
+            GS.defenderSelectedDice.forEach((d,i)=>{if(d.value>mv){mv=d.value;mi=i;}});
+            if(mv>3){
+                AudioSys.playSe('cheat');
+                const ov=GS.defenderSelectedDice[mi].value;
+                GS.defenderSelectedDice[mi].value=3;
+                defTotal=GS.defenderSelectedDice.reduce((s,d)=>s+d.value,0);
+                abilDescs.push(`イカサマ発動！ 防御出目 ${ov} → 3 に変更！`);
+            }
+        }
+    }
+
+    // ======= クライシス イカサマ (防御側) =======
+    if(dc.abilityType==='cheat_both'){
+        const hp=GS.p1IsAttacker?GS.p2Hp:GS.p1Hp;
+        if(hp<=15&&GS.attackerSelectedDice.length>0){
+            let mi=0,mv=0;
+            GS.attackerSelectedDice.forEach((d,i)=>{if(d.value>mv){mv=d.value;mi=i;}});
+            if(mv>3){
+                AudioSys.playSe('cheat');
+                const ov=GS.attackerSelectedDice[mi].value;
+                GS.attackerSelectedDice[mi].value=3;
+                atkTotal=GS.attackerSelectedDice.reduce((s,d)=>s+d.value,0);
+                abilDescs.push(`イカサマ発動！ 攻撃出目 ${ov} → 3 に変更！`);
+            }
+        }
+    }
+
+    // ======= オーガスト: パワー消費 =======
+    if(ac.abilityType==='attack_august'){
         const key=GS.p1IsAttacker?'p1':'p2';
         if(GS.powerStacks[key]>0){
             atkBonus+=GS.powerStacks[key];
             abilDescs.push(`パワー${GS.powerStacks[key]}層発動！ ダメージ+${GS.powerStacks[key]}`);
+            GS.augustConsumedThisTurn[key]=true;
             GS.powerStacks[key]=0;
         }
     }
 
-    // Attacker ability
-    if(ac.abilityType==='attack'){const r=ac.ability(GS.attackerSelectedDice);atkBonus+=r.bonus;abilDescs.push(...r.desc);}
-    else if(ac.abilityType==='attack_special'){
-        const hp=GS.p1IsAttacker?GS.p1Hp:GS.p2Hp;
-        const r=ac.ability(GS.attackerSelectedDice,hp);abilDescs.push(...r.desc);
-        if(r.cheat&&GS.defenderSelectedDice.length>0){
-            AudioSys.playSe('cheat'); // イカサマ SEn            let mi=0,mv=0;GS.defenderSelectedDice.forEach((d,i)=>{if(d.value>mv){mv=d.value;mi=i;}});
-            const ov=GS.defenderSelectedDice[mi].value;GS.defenderSelectedDice[mi].value=2;
-            defTotal=GS.defenderSelectedDice.reduce((s,d)=>s+d.value,0);
-            abilDescs.push(`防御出目 ${ov} → 2 に変更！`);
-        }
+    // ======= 攻撃側能力 (ガルム、ジャスパー) =======
+    if(ac.abilityType==='attack'){
+        const r=ac.ability(GS.attackerSelectedDice);
+        atkBonus+=r.bonus;abilDescs.push(...r.desc);
     }
-    // ホースラ Defender ability (ダメージに依存しない)
-    if(dc.abilityType==='defense'){const r=dc.ability(GS.defenderSelectedDice);if(r.instantDamage){instantDmg=r.instantDamage;abilDescs.push(...r.desc);}}
 
     const totalAtk=atkTotal+atkBonus;
-    const dmg=Math.max(0,totalAtk-defTotal);
+    const dmg=miracleOverride?0:Math.max(0,totalAtk-defTotal);
     GS._lastDmg=dmg;
+    GS.miracleDmgOverride=miracleOverride;
 
-    // ドラン: ダメージを受けた場合の即時ダメージ
+    // ======= ホースラ 即時ダメージ =======
+    if(dc.abilityType==='defense'){
+        const r=dc.ability(GS.defenderSelectedDice);
+        if(r.instantDamage>0){instantDmg+=r.instantDamage;abilDescs.push(...r.desc);}
+    }
+
+    // ======= ドラン 即時ダメージ =======
     if(dc.abilityType==='defense_doran'){
         const r=dc.ability(GS.defenderSelectedDice,dmg);
         if(r.instantDamage>0){instantDmg+=r.instantDamage;abilDescs.push(...r.desc);}
+    }
+
+    // ======= 即時ダメージ適用 (アニメーション前に即時適用) =======
+    if(instantDmg>0){
+        if(GS.p1IsAttacker) GS.p1Hp=Math.max(0,GS.p1Hp-instantDmg);
+        else GS.p2Hp=Math.max(0,GS.p2Hp-instantDmg);
+        AudioSys.playSe('sp-damage');
+        updateBattleUI();
     }
 
     showInlineDamage(totalAtk,atkBonus,defTotal,dmg,abilDescs,instantDmg);
 }
 
 function showInlineDamage(totalAtk,atkBonus,defTotal,dmg,abilDescs,instantDmg){
-    // Hide center total, show damage inline
     $('selection-total-display').classList.add('hidden');
     const di=$('damage-inline');
     const dr=$('dmg-result-display');
@@ -870,7 +1088,6 @@ function showInlineDamage(totalAtk,atkBonus,defTotal,dmg,abilDescs,instantDmg){
     const atkSide=$('dmg-atk-side');
     const defSide=$('dmg-def-side');
 
-    // Reset
     atkValEl.textContent='?';defValEl.textContent='?';
     atkSide.classList.remove('dmg-pop');defSide.classList.remove('dmg-pop');
     clashEl.classList.remove('clash-active');clashEl.textContent='VS';
@@ -908,32 +1125,29 @@ function showInlineDamage(totalAtk,atkBonus,defTotal,dmg,abilDescs,instantDmg){
         clashEl.textContent='⚡';
         clashEl.classList.add('clash-active');
         AudioSys.playSe('clash');
-        // Screen shake
         const bs=$('battle-screen');bs.classList.add('screen-shake');
         setTimeout(()=>bs.classList.remove('screen-shake'),400);
-        // Sparks
         createSparks();
     },step2Delay+800);
 
-    // Step 5: Result
+    // Step 5: Result (SE moved to applyDamage for HP bar animation timing)
     setTimeout(()=>{
         di.classList.add('hidden');
         dr.classList.remove('hidden');
         const rv=$('dmg-result-value');
-        if(dmg>0){
+        if(GS.miracleDmgOverride){
+            rv.textContent='✨ ミラクル！ ダメージ無効！';rv.style.color='#FFD700';
+        } else if(dmg>0){
             rv.textContent=`💥 ${dmg} ダメージ！`;rv.style.color='#FF6B6B';
-            AudioSys.playSe('damage');
         } else {
             rv.textContent='🛡️ ダメージ無効！';rv.style.color='#6B9BFF';
-            AudioSys.playSe('shield');
         }
         if(instantDmg>0){
             rv.textContent+=`\n⚡ 即時${instantDmg}ダメージ！`;
-            AudioSys.playSe('sp-damage'); // 即時ダメージ SE
         }
     },step2Delay+1600);
 
-    // Step 6: Apply damage
+    // Step 6: Apply damage (SE plays during HP bar animation)
     setTimeout(()=>{
         applyDamage(dmg,instantDmg);
     },step2Delay+3000);
@@ -961,26 +1175,35 @@ function createSparks(){
 
 function applyDamage(dmg,instantDmg){
     const ac=atkChar(),dc=defChar();
+    // Main damage (instant damage already applied in startDamageCalc)
     if(GS.p1IsAttacker){
         GS.p2Hp=Math.max(0,GS.p2Hp-dmg);
-        if(instantDmg>0)GS.p1Hp=Math.max(0,GS.p1Hp-instantDmg);
     } else {
         GS.p1Hp=Math.max(0,GS.p1Hp-dmg);
-        if(instantDmg>0)GS.p2Hp=Math.max(0,GS.p2Hp-instantDmg);
     }
-    // ライアン: ダメージ 0 なら HP5 回復
+    // SE plays during HP bar animation
+    if(dmg>0) AudioSys.playSe('damage');
+    else AudioSys.playSe('shield');
+    // ライアン: ダメージ 0 なら HP3 回復 (1ゲーム2回まで)
     if(dc.abilityType==='defense_ryan'&&dmg===0){
         const defKey=GS.p1IsAttacker?'p2':'p1';
-        if(defKey==='p1'){GS.p1Hp=Math.min(GS.p1MaxHp,GS.p1Hp+5);}
-        else{GS.p2Hp=Math.min(GS.p2MaxHp,GS.p2Hp+5);}
-        AudioSys.playSe('cure'); // 回復 SE
+        if(GS.ryanHealCount[defKey]<2){
+            if(defKey==='p1'){GS.p1Hp=Math.min(GS.p1MaxHp,GS.p1Hp+3);}
+            else{GS.p2Hp=Math.min(GS.p2MaxHp,GS.p2Hp+3);}
+            GS.ryanHealCount[defKey]++;
+            AudioSys.playSe('cure');
+        }
     }
-    // オーガスト: 攻撃後パワー獲得
+    // オーガスト: 攻撃後パワー獲得 (最大4層、消費ターンは基本獲得不可、全偶数は可)
     if(ac.abilityType==='attack_august'){
         const atkKey=GS.p1IsAttacker?'p1':'p2';
         const r=ac.ability(GS.attackerSelectedDice);
-        GS.powerStacks[atkKey]=r.stacks;
-        AudioSys.playSe('power-up'); // パワー獲得 SE
+        if(GS.augustConsumedThisTurn[atkKey]&&r.stacks===2){
+            // 消費ターンかつ偶数でない: パワー獲得なし
+        } else {
+            GS.powerStacks[atkKey]=Math.min(4,GS.powerStacks[atkKey]+r.stacks);
+            AudioSys.playSe('power-up');
+        }
     }
     // ライアンDEFバフ: ターン終了時チェック
     ['p1','p2'].forEach(key=>{
@@ -991,7 +1214,7 @@ function applyDamage(dmg,instantDmg){
         }
     });
     updateBattleUI();
-    // v1.5: HP赤トラッキング (赤になった時に毎回再生)
+    // HP赤トラッキング
     const p1R=GS.p1MaxHp>0?GS.p1Hp/GS.p1MaxHp:1;
     const p2R=GS.p2MaxHp>0?GS.p2Hp/GS.p2MaxHp:1;
     const p1NowRed=p1R<=0.25&&GS.p1Hp>0;
@@ -1009,12 +1232,9 @@ function applyDamage(dmg,instantDmg){
         clearDamageDisplay();
         $('opponent-dice-tray').innerHTML='';$('dice-tray').innerHTML='';
         GS.p1IsAttacker=!GS.p1IsAttacker;
-        // v1.5.1: 1ターン=両者攻防 (前半→後半→ターン加算)
         if(GS._turnHalf===0){
-            // 前半終了 → 後半へ（攻守交代だけ、ターン数は変えない）
             GS._turnHalf=1;
         } else {
-            // 後半終了 → ターン加算して前半に戻す
             GS._turnHalf=0;
             GS.turn++;
         }
@@ -1067,7 +1287,21 @@ function createParticles(w){
 }
 
 $('btn-rematch').addEventListener('click',()=>{AudioSys.playSe('confirm');$('result-overlay').classList.add('hidden');startBattle();});
-$('btn-to-title').addEventListener('click',()=>{AudioSys.playSe('click');$('result-overlay').classList.add('hidden');GS.p1Char=null;GS.p2Char=null;showScreen('title');});
+$('btn-to-title').addEventListener('click',()=>{AudioSys.playSe('click');$('result-overlay').classList.add('hidden');resetBattleState();GS.p1Char=null;GS.p2Char=null;showScreen('title');});
+
+// v1.6: バトル状態リセット関数
+function resetBattleState(){
+    $('dice-tray').innerHTML='';$('opponent-dice-tray').innerHTML='';
+    GS.rolledDice=[];GS.rolledDiceP2=[];
+    GS.attackerSelectedDice=[];GS.defenderSelectedDice=[];
+    GS.hasRolled=false;GS.animating=false;
+    clearDamageDisplay();hideAbility();
+    $('action-panel-right').classList.add('hidden');
+    $('coin-overlay').classList.add('hidden');
+    $('turn-start-overlay').classList.add('hidden');
+    $('result-overlay').classList.add('hidden');
+    $('char-info-popup').classList.add('hidden');
+}
 
 // Init
 GS.currentActorIsHuman=true;showScreen('title');
@@ -1197,7 +1431,15 @@ function renderPlayerList(players){
 
 function showOnlineDeckScreen(opponentName){
     showScreen('deck');GS.p1Char=null;GS.p2Char=null;
+    GS.deckStep=0; // Online mode: skip deck step logic
     GS.onlineReady={p1:false,p2:false};
+    $('p1-deck-section').classList.remove('hidden');
+    $('opponent-deck-section').classList.add('hidden');
+    $('p2-deck-section').classList.add('hidden');
+    $('btn-deck-next').classList.add('hidden');
+    $('btn-battle-start').classList.remove('hidden');
+    $('btn-battle-start').disabled=true;
+    $('btn-back-title').textContent='戻る';
     if(GS.onlineRole==='host'){
         $('deck-title').textContent='デッキ選択 - オンライン (ホスト)';
     } else {
@@ -1205,10 +1447,7 @@ function showOnlineDeckScreen(opponentName){
     }
     $('deck-player-label').textContent='自分のキャラカード';
     $('deck-subtitle').textContent=`対戦相手: ${opponentName || '???'}`;
-    $('opponent-deck-section').classList.add('hidden');
-    $('p2-deck-section').classList.add('hidden');
-    renderCards('char-cards-grid','p1');
-    $('btn-battle-start').disabled=true;
+    renderCards('char-cards-grid','p1',false);
     hideDetail();
 }
 
@@ -1500,11 +1739,13 @@ function showCharInfoPopup(ch){
     const def=ch===GS.p1Char?p1Def:p2Def;
     const hp=ch===GS.p1Char?GS.p1Hp:GS.p2Hp;
     const key=ch===GS.p1Char?'p1':'p2';
-    const power=ch.id===7&&GS.powerStacks[key]>0?`\n⚡ パワー ${GS.powerStacks[key]}層 蓄積中`:'';
+    let extraInfo='';
+    if(ch.id===7&&GS.powerStacks[key]>0) extraInfo+=`\n⚡ パワー ${GS.powerStacks[key]}層 蓄積中`;
+    if(ch.id===6) extraInfo+=`\n💚 回復残り ${2-GS.ryanHealCount[key]}/2 回`;
     $('char-info-portrait').textContent=ch.emoji;
     $('char-info-name').textContent=ch.name;
     $('char-info-stats').textContent=`HP ${hp}/${ch.hp}  ⚔️${ch.atk}  🛡️${def}`;
-    $('char-info-desc').textContent=ch.abilityDesc+power;
+    $('char-info-desc').textContent=ch.abilityDesc+extraInfo;
     AudioSys.playSe('cursor');
     $('char-info-popup').classList.remove('hidden');
 }

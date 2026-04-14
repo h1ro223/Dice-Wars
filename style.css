@@ -517,3 +517,47 @@ html, body {
     /* 1P下部: ホームバー分 */
     .player-area.player { padding-bottom:max(6px,env(safe-area-inset-bottom)); }
 }
+
+/* ============ v1.6 Additions ============ */
+
+/* news-entry (お知らせモーダル) */
+.news-entry {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--glass-border);
+}
+.news-entry:last-child { border-bottom: none; }
+.news-entry p {
+    margin-top: 8px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text-primary);
+}
+
+/* YouTube Coming Soon */
+.youtube-coming-soon {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 20px;
+    background: rgba(255,255,255,0.04);
+    border: 1px dashed var(--glass-border);
+    border-radius: 12px;
+    min-height: 80px;
+}
+
+/* random/おまかせ card */
+.char-card.random-card {
+    border: 2px dashed rgba(255,215,0,0.4);
+    background: rgba(255,215,0,0.06);
+}
+.char-card.random-card:hover {
+    border-color: var(--gold);
+    background: rgba(255,215,0,0.12);
+}
+.char-card.random-card.selected {
+    border-color: var(--gold);
+    background: rgba(255,215,0,0.18);
+    box-shadow: 0 0 16px rgba(255,215,0,0.3);
+}

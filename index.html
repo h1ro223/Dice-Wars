@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>サイコロ・ウォーズ v1.5</title>
+    <title>サイコロ・ウォーズ v1.6</title>
     <meta name="description" content="サイコロ・ウォーズ - サイコロで戦う戦略バトルゲーム！キャラカードとサイコロを駆使して勝利を掴め！">
     <meta name="theme-color" content="#0D0B2E">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -34,7 +34,7 @@
         <div class="op-content">
             <div class="op-title-main">サイコロ・ウォーズ</div>
             <div class="op-title-sub">DICE BATTLE STRATEGY</div>
-            <div class="op-title-ver">v1.5</div>
+            <div class="op-title-ver">v1.6</div>
         </div>
     </div>
 
@@ -47,7 +47,7 @@
                 <div class="title-dice-decoration left">🎲</div>
                 <h1 class="title-text">
                     <span class="title-main">サイコロ・ウォーズ</span>
-                    <span class="title-version">v1.5</span>
+                    <span class="title-version">v1.6</span>
                 </h1>
                 <div class="title-dice-decoration right">🎲</div>
             </div>
@@ -60,6 +60,7 @@
                 <button id="btn-how-to-play" class="btn-glass">📖 遊び方</button>
                 <button id="btn-update-log" class="btn-glass">📋 更新履歴</button>
                 <button id="btn-about" class="btn-glass">ℹ️ このサイトについて</button>
+                <button id="btn-news" class="btn-glass">📢 お知らせ</button>
                 <button id="btn-title-settings" class="btn-glass">⚙️ 設定</button>
             </div>
             <div class="title-footer">
@@ -193,10 +194,17 @@
                 <div class="howto-section">
                     <h3>📚 ゲーム用語</h3>
                     <ul>
-                        <li><strong>イカサマ</strong> ― ダメージ計算フェーズ時、相手の選択したサイコロの最大出目(1つのみ)を2にする。</li>
-                        <li><strong>即時ダメージ</strong> ― ダメージ計算フェーズに入る前に、相手にダメージを与える。</li>
-                        <li><strong>パワー</strong> ― 攻撃時、層数に応じてダメージがアップ。攻撃時に消費される。</li>
+                        <li><strong>イカサマ</strong> ― 相手の選択したサイコロの最大出目(1つのみ)を3にする。攻防両方で発動可能。</li>
+                        <li><strong>即時ダメージ</strong> ― ダメージ計算前に、相手にダメージを与える。</li>
+                        <li><strong>パワー</strong> ― 攻撃時、層数に応じてダメージがアップ。攻撃時に消費される。(最大4層)</li>
                     </ul>
+                </div>
+                <div class="howto-section">
+                    <h3>🎬 動画で見る</h3>
+                    <div class="youtube-coming-soon">
+                        <span style="font-size:36px;">🎬</span>
+                        <p style="color:var(--text-muted);font-size:12px;">遊び方動画は準備中です！ Coming Soon</p>
+                    </div>
                 </div>
                 <div class="howto-section">
                     <h3>💡 コツ</h3>
@@ -220,7 +228,23 @@
             </div>
             <div class="modal-body">
                 <div class="update-entry">
-                    <span class="version-badge new">🟢 v1.5</span>
+                    <span class="version-badge new">🟢 v1.6</span>
+                    <span class="update-date">2026/04/15</span>
+                    <ul class="update-list">
+                        <li>✦ 新キャラ「ミラクル」追加</li>
+                        <li>✦ 7キャラのバランス調整</li>
+                        <li>✦ クライシスのイカサマ不具合修正</li>
+                        <li>✦ キャラ選択画面2画面構成に改善</li>
+                        <li>✦ 全モードに「おまかせ」選択を追加</li>
+                        <li>✦ お知らせ機能追加</li>
+                        <li>✦ 遊び方にYouTube欄追加</li>
+                        <li>✦ 即時ダメージの発動タイミングを改善</li>
+                        <li>✦ SE再生タイミングを改善</li>
+                        <li>✦ タイトル戻り時のサイコロ表示リセット</li>
+                    </ul>
+                </div>
+                <div class="update-entry">
+                    <span class="version-badge">🟢 v1.5</span>
                     <span class="update-date">2026/04/11</span>
                     <ul class="update-list">
                         <li>✦ BGM・SE（効果音）を本格実装</li>
@@ -314,6 +338,26 @@
         </div>
     </div>
 
+    <!-- ========== お知らせモーダル ========== -->
+    <div id="news-modal" class="modal-overlay hidden">
+        <div class="modal-content modal-sm">
+            <div class="modal-header">
+                <h2>📢 お知らせ</h2>
+                <button class="btn-close modal-close-btn" data-close="news-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="news-entry">
+                    <span class="version-badge new">🟢 v1.6 リリース</span>
+                    <span class="update-date">2026/04/15</span>
+                    <p>新キャラ「ミラクル」が登場！全キャラのバランス調整も実施しました。詳しくは更新履歴をご確認ください。</p>
+                </div>
+                <div class="news-entry">
+                    <p style="color:var(--text-muted);font-size:12px;text-align:center;">今後のお知らせもここに掲載されます。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- ========== 設定モーダル ========== -->
     <div id="settings-modal" class="modal-overlay hidden">
         <div class="modal-content modal-sm">
@@ -368,7 +412,7 @@
                 <h2 id="deck-title">デッキ選択</h2>
                 <p id="deck-subtitle" class="deck-subtitle">キャラカードを選んでバトルに挑め！</p>
             </div>
-            <div class="deck-section">
+            <div id="p1-deck-section" class="deck-section">
                 <h3 id="deck-player-label" class="section-label">自分のキャラカード</h3>
                 <div id="char-cards-grid" class="cards-grid"></div>
             </div>
@@ -389,6 +433,7 @@
             </div>
             <div class="deck-actions">
                 <button id="btn-back-title" class="btn-outline">戻る</button>
+                <button id="btn-deck-next" class="btn-glow hidden" disabled>次へ →</button>
                 <button id="btn-battle-start" class="btn-glow" disabled>バトル開始！</button>
             </div>
         </div>
