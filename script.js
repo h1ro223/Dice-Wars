@@ -272,56 +272,56 @@ const CHARACTERS = [
     {
         id:1, name:'ガルム', emoji:'🐺', hp:24, atk:3, def:3,
         dice:[{type:6,label:'6D'},{type:6,label:'6D'},{type:4,label:'4D'},{type:4,label:'4D'}],
-        abilityDesc:'攻撃時、選択したサイコロに同じ出目がある場合、ダメージ+2。その同じ出目が4の場合、ダメージ+5。',
+        abilityDesc:'【攻撃時】選んだサイコロの中に同じ出目のペア(2つ以上)がある場合、ダメージ+2のボーナス。さらに、そのペアの出目が「4」の場合はダメージ+5に強化される。（※複数ペアがあれば全て発動）',
         abilityType:'attack',
         ability(sel){ let b=0,d=[]; const c={}; sel.forEach(s=>{c[s.value]=(c[s.value]||0)+1}); for(const[v,n]of Object.entries(c)){if(n>=2){if(+v===4){b+=5;d.push(`出目4のペア！ ダメージ+5`)}else{b+=2;d.push(`出目${v}のペア！ ダメージ+2`)}}} return{bonus:b,desc:d}; }
     },
     {
         id:2, name:'ホースラ', emoji:'🦊', hp:25, atk:3, def:3,
         dice:[{type:6,label:'6D'},{type:4,label:'4D'},{type:4,label:'4D'},{type:4,label:'4D'}],
-        abilityDesc:'防御時、リロールチャンスを1回獲得する。また、防御時に選んだサイコロに同じ出目がある場合、ただちに相手に4の即時ダメージを与える。',
+        abilityDesc:'【防御時】通常の防御リロール(0回)に加え、追加でリロールチャンスを1回獲得(計1回可能)。さらに、選んだサイコロの中にペア(同じ出目2つ以上)がある場合、通常のダメージ計算とは別に、相手に即時4ダメージを与える。',
         abilityType:'defense', defenseReroll:1,
         ability(sel){ let id=0,d=[]; const c={}; sel.forEach(s=>{c[s.value]=(c[s.value]||0)+1}); for(const[,n]of Object.entries(c)){if(n>=2){id+=4;d.push(`防御時ペア発動！ 相手に即時4ダメージ！`)}} return{bonus:0,desc:d,instantDamage:id}; }
     },
     {
         id:3, name:'ジャスパー', emoji:'🦁', hp:24, atk:4, def:2,
         dice:[{type:6,label:'6D'},{type:6,label:'6D'},{type:4,label:'4D'},{type:4,label:'4D'},{type:4,label:'4D'}],
-        abilityDesc:'攻撃時、選択したサイコロに同じ出目が2つある場合、ダメージ+3。同じ出目が1つ増えるたびに、ダメージがさらに+4。(最大追加ダメージ+11)',
+        abilityDesc:'【攻撃時】選んだサイコロに同じ出目が2つ(ペア)ある場合、ダメージ+3。3つなら+7、4つなら上限の+11。同じ数字を揃えるほど強力！（※1回の攻撃でボーナスは1セットのみ適用）',
         abilityType:'attack',
         ability(sel){ let b=0,d=[]; const c={}; sel.forEach(s=>{c[s.value]=(c[s.value]||0)+1}); let applied=false; for(const[v,n]of Object.entries(c)){if(n>=2&&!applied){const x=3+4*(n-2);const capped=Math.min(x,11);b+=capped;d.push(`出目${v}が${n}つ！ ダメージ+${capped}`);applied=true;}} return{bonus:b,desc:d}; }
     },
     {
         id:4, name:'クライシス', emoji:'🐉', hp:25, atk:3, def:2,
         dice:[{type:8,label:'8D'},{type:6,label:'6D'},{type:6,label:'6D'},{type:4,label:'4D'},{type:4,label:'4D'}],
-        abilityDesc:'自身のHPが15以下の場合、"イカサマ"が付与される。相手の選択サイコロの最大出目を3にする。(攻防両方で発動)',
+        abilityDesc:'【攻撃時・防御時】自分のHPが15以下になると「イカサマ」が発動。相手が選んだサイコロの中で最も高い出目1つを強制的に「3」に変える。攻撃・防御の両フェーズで適用される。',
         abilityType:'cheat_both',
         ability(sel,hp){ let d=[]; const a=hp<=15; if(a)d.push(`イカサマ発動！ 相手の最大出目を3に！`); return{bonus:0,desc:d,cheat:a}; }
     },
     {
         id:5, name:'ドラン', emoji:'🐲', hp:26, atk:4, def:3,
         dice:[{type:6,label:'6D'},{type:4,label:'4D'},{type:4,label:'4D'},{type:4,label:'4D'},{type:4,label:'4D'}],
-        abilityDesc:'防御時、ダメージを受けた場合相手に1の即時ダメージ。防御サイコロが全て奇数なら代わりに4の即時ダメージ。',
+        abilityDesc:'【防御時】ダメージを1以上受けた場合、反射で相手に即時1ダメージ。ただし、選んだ防御サイコロの出目が「全て奇数」なら、反射ダメージが即時4ダメージに強化される。（ダメージ0の場合は不発）',
         abilityType:'defense_doran',
         ability(sel,dmg){ let id=0,d=[]; if(dmg>0){const allOdd=sel.every(s=>s.value%2===1);if(allOdd){id=4;d.push(`全て奇数！ 相手に即時4ダメージ！`)}else{id=1;d.push(`ダメージ反射！ 相手に即時1ダメージ！`)}} return{bonus:0,desc:d,instantDamage:id}; }
     },
     {
         id:6, name:'ライアン', emoji:'🦅', hp:25, atk:3, def:3,
         dice:[{type:6,label:'6D'},{type:6,label:'6D'},{type:4,label:'4D'},{type:4,label:'4D'},{type:4,label:'4D'}],
-        abilityDesc:'防御時、リロール1回獲得。防御時にダメージ0ならHP3回復(回復は1ゲームに2回まで)。ターン終了時HP5以下ならDEF+1(HP6以上で解除)。',
+        abilityDesc:'【防御時】リロールチャンスを1回獲得。防御で受けるダメージが0の場合、HPを3回復する(1試合中に最大2回まで)。さらに、ターン終了時にHPが5以下の場合、DEFが+1される(HPが6以上に戻ると解除)。',
         abilityType:'defense_ryan', defenseReroll:1,
         ability(sel,dmg){ let d=[],heal=0; if(dmg===0){heal=3;d.push(`ダメージ無効！ HP3回復！`)} return{bonus:0,desc:d,heal:heal}; }
     },
     {
         id:7, name:'オーガスト', emoji:'🐻', hp:25, atk:3, def:2,
         dice:[{type:6,label:'6D'},{type:6,label:'6D'},{type:4,label:'4D'},{type:4,label:'4D'},{type:4,label:'4D'}],
-        abilityDesc:'攻撃後パワー2層獲得。全て偶数なら代わりに4層。次の攻撃時にパワー層数ぶんダメージ加算・消費。(最大4層)',
+        abilityDesc:'【攻撃時】攻撃ダメージ計算後、パワーを2層獲得する。選んだサイコロの出目が「全て偶数」なら4層獲得。次回の攻撃時、蓄積パワーの層数ぶんだけダメージに加算して全消費する。（パワーは最大4層まで蓄積可能）',
         abilityType:'attack_august',
         ability(sel){ const allEven=sel.every(s=>s.value%2===0); return{stacks:allEven?4:2,desc:allEven?[`全て偶数！ パワー4層獲得！`]:[`パワー2層獲得！`]}; }
     },
     {
         id:8, name:'ミラクル', emoji:'🦄', hp:24, atk:4, def:4,
         dice:[{type:4,label:'4D'},{type:4,label:'4D'},{type:4,label:'4D'},{type:4,label:'4D'},{type:4,label:'4D'}],
-        abilityDesc:'選択サイコロが全て4なら相手のHPを4にする(4以下なら不発)。ダメージ無効。攻撃時のみ、全て4でない場合は自分に即時4ダメージ(HP4以下なら不発)。(攻防両方発動)',
+        abilityDesc:'【攻撃時・防御時】選んだサイコロの出目が全て「4」の場合、相手のHPを強制的に4にする(相手HPが4以下なら不発)。通常のダメージ計算は無効化される。ただし攻撃時のみ、出目が全て「4」でなければ自分に即時4ダメージのペナルティ(自分のHPが4以下なら不発)。',
         abilityType:'miracle',
         ability(sel){ const allFour=sel.every(s=>s.value===4); return{allFour,desc:allFour?[`全て4！ ミラクル発動！`]:[]}; }
     }
