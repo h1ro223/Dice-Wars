@@ -83,42 +83,6 @@
         </div>
     </div>
 
-    <!-- ========== CPUモード選択モーダル ========== -->
-    <div id="cpu-mode-modal" class="modal-overlay hidden">
-        <div class="modal-content modal-sm">
-            <div class="modal-header">
-                <h2>⚔️ VS CPU</h2>
-                <button class="btn-close modal-close-btn" data-close="cpu-mode-modal">&times;</button>
-            </div>
-            <div class="modal-body" style="display:flex;flex-direction:column;gap:10px;">
-                <button id="btn-cpu-normal" class="btn-glow mode-btn" style="width:100%;">🎮 通常バトル</button>
-                <button id="btn-cpu-chaos" class="btn-glow mode-btn btn-chaos" style="width:100%;">🎲 カオスモード</button>
-                <button id="btn-cpu-3on3" class="btn-glow mode-btn btn-team" style="width:100%;">⚔️ 3on3 チームバトル</button>
-                <button id="btn-cpu-hardcore" class="btn-glow mode-btn btn-hardcore" style="width:100%;">🔥 ハードコア</button>
-                <p class="mode-desc-text">
-                    🎲 カオス: 毎ターンサイコロがランダム<br>
-                    ⚔️ 3on3: 3体選んでリレーバトル<br>
-                    🔥 ハードコア: CPUが超強化 (HP+5)
-                </p>
-            </div>
-        </div>
-    </div>
-
-    <!-- ========== ローカルマルチ モード選択モーダル ========== -->
-    <div id="local-mode-modal" class="modal-overlay hidden">
-        <div class="modal-content modal-sm">
-            <div class="modal-header">
-                <h2>📱 ローカルプレイ</h2>
-                <button class="btn-close modal-close-btn" data-close="local-mode-modal">&times;</button>
-            </div>
-            <div class="modal-body" style="display:flex;flex-direction:column;gap:10px;">
-                <button id="btn-local-normal" class="btn-glow btn-multi mode-btn" style="width:100%;">🎮 通常バトル</button>
-                <button id="btn-local-chaos" class="btn-glow btn-multi mode-btn btn-chaos" style="width:100%;">🎲 カオスモード</button>
-                <button id="btn-local-3on3" class="btn-glow btn-multi mode-btn btn-team" style="width:100%;">⚔️ 3on3 チームバトル</button>
-            </div>
-        </div>
-    </div>
-
     <!-- ========== オンラインプレイモーダル ========== -->
     <div id="online-modal" class="modal-overlay hidden">
         <div class="modal-content modal-sm">
@@ -563,7 +527,6 @@
             <div id="turn-indicator" class="turn-indicator">
                 <span id="turn-number" class="turn-number">ターン1</span>
                 <span id="phase-label" class="phase-label">攻撃フェーズ</span>
-                <span id="mode-badge" class="mode-badge hidden"></span>
             </div>
             <div class="hud-buttons">
                 <button id="btn-howto-battle" class="btn-hud" title="遊び方">❓</button>
@@ -599,7 +562,6 @@
             <div id="opponent-dice-area" class="dice-area-inline">
                 <div id="opponent-dice-tray" class="dice-tray-free"></div>
             </div>
-            <div id="p2-team-bar" class="team-bar hidden"></div>
         </div>
 
         <!-- 中央: バトルフィールド -->
@@ -656,7 +618,6 @@
             <div id="player-ability-bar" class="ability-bar player-ability">
                 <p id="player-ability-text-battle" class="ability-bar-text"></p>
             </div>
-            <div id="p1-team-bar" class="team-bar hidden"></div>
         </div>
 
         <!-- 1P右側操作パネル -->
@@ -725,14 +686,6 @@
         <div class="overlay-content turn-start-content">
             <span id="turn-start-number" class="turn-start-number"></span>
             <span id="turn-start-role" class="turn-start-role"></span>
-        </div>
-    </div>
-
-    <!-- ========== チーム切り替えオーバーレイ (3on3) ========== -->
-    <div id="team-transition-overlay" class="overlay hidden">
-        <div class="overlay-content team-transition-content">
-            <span id="team-transition-text" class="team-transition-text"></span>
-            <span id="team-transition-next" class="team-transition-next"></span>
         </div>
     </div>
 

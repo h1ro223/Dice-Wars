@@ -355,12 +355,6 @@ const GS = {
     // オンライン
     onlineRole:null,
     onlineReady:{p1:false,p2:false},
-    // v1.7: ゲームモード
-    chaos:false,
-    hardcore:false,
-    teamMode:false,
-    p1Team:[], p2Team:[],
-    p1TeamIdx:0, p2TeamIdx:0,
 };
 
 const $=id=>document.getElementById(id);
@@ -377,9 +371,9 @@ function showScreen(n){
 }
 
 // ============ Title ============
-$('btn-start-cpu').addEventListener('click',()=>{AudioSys.playSe('click');$('cpu-mode-modal').classList.remove('hidden');});
+$('btn-start-cpu').addEventListener('click',()=>{AudioSys.playSe('click');GS.mode='cpu';showDeckScreen();});
 $('btn-start-multi').addEventListener('click',()=>{AudioSys.playSe('click');$('multi-mode-modal').classList.remove('hidden');});
-$('btn-local-multi').addEventListener('click',()=>{AudioSys.playSe('click');$('multi-mode-modal').classList.add('hidden');$('local-mode-modal').classList.remove('hidden');});
+$('btn-local-multi').addEventListener('click',()=>{AudioSys.playSe('confirm');$('multi-mode-modal').classList.add('hidden');GS.mode='multi';showDeckScreen();});
 
 // Modals
 $('btn-how-to-play').addEventListener('click',()=>{AudioSys.playSe('click');$('howto-modal').classList.remove('hidden')});
@@ -396,71 +390,39 @@ $('btn-page-refresh').addEventListener('click',()=>{location.reload();});
 document.querySelectorAll('.modal-close-btn').forEach(b=>{b.addEventListener('click',()=>{AudioSys.playSe('click');const id=b.dataset.close;if(id)$(id).classList.add('hidden');});});
 document.querySelectorAll('.modal-overlay').forEach(o=>{o.addEventListener('click',e=>{if(e.target===o){AudioSys.playSe('click');o.classList.add('hidden');}});});
 
-// ============ Mode Selection Handlers ============
-function setModeAndStart(mode,chaos,hardcore,team){
-    GS.mode=mode;GS.chaos=chaos;GS.hardcore=hardcore;GS.teamMode=team;
-    GS.p1Team=[];GS.p2Team=[];GS.p1TeamIdx=0;GS.p2TeamIdx=0;
-    $('cpu-mode-modal').classList.add('hidden');
-    $('local-mode-modal').classList.add('hidden');
-    $('multi-mode-modal').classList.add('hidden');
-    showDeckScreen();
-}
-$('btn-cpu-normal').addEventListener('click',()=>{AudioSys.playSe('confirm');setModeAndStart('cpu',false,false,false);});
-$('btn-cpu-chaos').addEventListener('click',()=>{AudioSys.playSe('confirm');setModeAndStart('cpu',true,false,false);});
-$('btn-cpu-3on3').addEventListener('click',()=>{AudioSys.playSe('confirm');setModeAndStart('cpu',false,false,true);});
-$('btn-cpu-hardcore').addEventListener('click',()=>{AudioSys.playSe('confirm');setModeAndStart('cpu',false,true,false);});
-$('btn-local-normal').addEventListener('click',()=>{AudioSys.playSe('confirm');setModeAndStart('multi',false,false,false);});
-$('btn-local-chaos').addEventListener('click',()=>{AudioSys.playSe('confirm');setModeAndStart('multi',true,false,false);});
-$('btn-local-3on3').addEventListener('click',()=>{AudioSys.playSe('confirm');setModeAndStart('multi',false,false,true);});
-
 // ============ Deck Screen ============
 function showDeckScreen(){
     showScreen('deck');GS.p1Char=null;GS.p2Char=null;GS.cpuOpponentChoice=null;
     GS.p1Random=false;GS.p2Random=false;GS.deckStep=1;
-    if(GS.teamMode){GS.p1Team=[];GS.p2Team=[];}
     showDeckStep1();
-}
-
-function getDeckTitle(){
-    if(GS.chaos) return GS.mode==='cpu'?'デッキ選択 - カオス':'デッキ選択 - カオス マルチ';
-    if(GS.teamMode) return GS.mode==='cpu'?'デッキ選択 - 3on3':'デッキ選択 - 3on3 マルチ';
-    if(GS.hardcore) return 'デッキ選択 - ハードコア';
-    return GS.mode==='cpu'?'デッキ選択 - VS CPU':'デッキ選択 - マルチプレイ';
 }
 
 function showDeckStep1(){
     GS.deckStep=1;
-    $('deck-title').textContent=getDeckTitle();
-    if(GS.teamMode){
-        $('deck-subtitle').textContent=GS.mode==='cpu'?'3体のキャラを選んでください ('+GS.p1Team.length+'/3)':'1P: 3体のキャラを選んでください ('+GS.p1Team.length+'/3)';
-        $('deck-player-label').textContent=GS.mode==='cpu'?'自分のチーム':'1Pのチーム';
-    } else if(GS.chaos){
-        $('deck-subtitle').textContent=GS.mode==='cpu'?'キャラを選ぶ（サイコロは毎ターンランダム！）':'　1Pのキャラを選ぶ（サイコロはランダム！）';
-        $('deck-player-label').textContent=GS.mode==='cpu'?'自分のキャラカード':'1Pのキャラカード';
+    if(GS.mode==='cpu'){
+        $('deck-title').textContent='デッキ選択 - VS CPU';
+        $('deck-subtitle').textContent='自分のキャラカードを選ぶ';
+        $('deck-player-label').textContent='自分のキャラカード';
     } else {
-        if(GS.mode==='cpu'){
-            $('deck-subtitle').textContent=GS.hardcore?'自分のキャラを選ぶ（CPUはHP+5）':'自分のキャラカードを選ぶ';
-            $('deck-player-label').textContent='自分のキャラカード';
-        } else {
-            $('deck-subtitle').textContent='1Pのキャラカードを選ぶ';
-            $('deck-player-label').textContent='1Pのキャラカード';
-        }
+        $('deck-title').textContent='デッキ選択 - マルチプレイ';
+        $('deck-subtitle').textContent='1Pのキャラカードを選ぶ';
+        $('deck-player-label').textContent='1Pのキャラカード';
     }
     $('p1-deck-section').classList.remove('hidden');
     $('opponent-deck-section').classList.add('hidden');
     $('p2-deck-section').classList.add('hidden');
-    renderCards('char-cards-grid','p1',!GS.teamMode);
-    // Re-apply selection
-    if(GS.teamMode){
-        updateTeamCardVisuals('char-cards-grid',GS.p1Team);
-    } else if(GS.p1Char){
-        $('char-cards-grid').querySelectorAll('.char-card').forEach(c=>c.classList.toggle('selected',+c.dataset.charId===GS.p1Char.id));
+    renderCards('char-cards-grid','p1',true);
+    // Re-apply p1 selection if already chosen (back from step 2)
+    if(GS.p1Char){
+        const g=$('char-cards-grid');
+        g.querySelectorAll('.char-card').forEach(c=>c.classList.toggle('selected',+c.dataset.charId===GS.p1Char.id));
     } else if(GS.p1Random){
-        $('char-cards-grid').querySelectorAll('.char-card').forEach(c=>c.classList.toggle('selected',c.dataset.charId==='random'));
+        const g=$('char-cards-grid');
+        g.querySelectorAll('.char-card').forEach(c=>c.classList.toggle('selected',c.dataset.charId==='random'));
     }
     $('btn-battle-start').classList.add('hidden');
     $('btn-deck-next').classList.remove('hidden');
-    $('btn-deck-next').disabled=GS.teamMode?GS.p1Team.length!==3:!(GS.p1Char||GS.p1Random);
+    $('btn-deck-next').disabled=!(GS.p1Char||GS.p1Random);
     $('btn-back-title').textContent='戻る';
     hideDetail();
 }
@@ -473,39 +435,15 @@ function showDeckStep2(){
     $('btn-battle-start').disabled=true;
     $('btn-back-title').textContent='← 戻る';
     if(GS.mode==='cpu'){
-        if(GS.teamMode){
-            // CPUがランダムで3体選択
-            const available=CHARACTERS.filter(c=>!GS.p1Team.some(t=>t.id===c.id));
-            const shuffled=[...available].sort(()=>Math.random()-0.5);
-            GS.p2Team=shuffled.slice(0,3);
-            GS.p2Char=GS.p2Team[0];
-            GS.cpuOpponentChoice=GS.p2Char.id;
-            $('deck-subtitle').textContent='CPUのチーム: '+GS.p2Team.map(c=>c.emoji+c.name).join(', ');
-            $('opponent-deck-section').classList.remove('hidden');
-            $('p2-deck-section').classList.add('hidden');
-            renderOpponentCards();
-            // CPUの3体をプリセレクト表示
-            GS.p2Team.forEach(ch=>{
-                $('opponent-cards-grid').querySelectorAll('.char-card').forEach(c=>{
-                    if(+c.dataset.charId===ch.id) c.classList.add('selected');
-                });
-            });
-            $('btn-battle-start').disabled=false;
-        } else {
-            $('deck-subtitle').textContent=GS.hardcore?'相手のキャラを選ぶ（CPU HP+5）':'相手のキャラカードを選ぶ';
-            $('opponent-deck-section').classList.remove('hidden');
-            $('p2-deck-section').classList.add('hidden');
-            renderOpponentCards();
-        }
+        $('deck-subtitle').textContent='相手のキャラカードを選ぶ';
+        $('opponent-deck-section').classList.remove('hidden');
+        $('p2-deck-section').classList.add('hidden');
+        renderOpponentCards();
     } else {
-        if(GS.teamMode){
-            $('deck-subtitle').textContent='2P: 3体のキャラを選んでください ('+GS.p2Team.length+'/3)';
-        } else {
-            $('deck-subtitle').textContent='2Pのキャラカードを選ぶ';
-        }
+        $('deck-subtitle').textContent='2Pのキャラカードを選ぶ';
         $('opponent-deck-section').classList.add('hidden');
         $('p2-deck-section').classList.remove('hidden');
-        renderCards('p2-cards-grid','p2',!GS.teamMode);
+        renderCards('p2-cards-grid','p2',true);
     }
     hideDetail();
 }
@@ -538,28 +476,6 @@ function renderOpponentCards(){
 
 function selectCard(cid,role,gid){
     const g=$(gid);
-    // === 3on3 チーム選択モード ===
-    if(GS.teamMode && (role==='p1'||role==='p2')){
-        if(cid==='random') return; // チームモードはおまかせ不可
-        const team=role==='p1'?GS.p1Team:GS.p2Team;
-        const ch=CHARACTERS.find(c=>c.id===cid);
-        const idx=team.findIndex(c=>c.id===cid);
-        if(idx>=0){
-            team.splice(idx,1);
-            AudioSys.playSe('cancel');
-        } else if(team.length<3){
-            team.push(ch);
-            AudioSys.playSe('select');
-            showDetail(ch);
-        } else { return; }
-        updateTeamCardVisuals(gid,team);
-        // サブタイトル更新
-        if(role==='p1') $('deck-subtitle').textContent=(GS.mode==='cpu'?'':'1P: ')+'3体のキャラを選んでください ('+team.length+'/3)';
-        else $('deck-subtitle').textContent='2P: 3体のキャラを選んでください ('+team.length+'/3)';
-        checkReady();
-        return;
-    }
-    // === 通常選択 ===
     if(role==='p1'){
         if(cid==='random'){
             if(GS.p1Random){GS.p1Random=false;GS.p1Char=null;g.querySelectorAll('.char-card').forEach(c=>c.classList.remove('selected'));hideDetail();checkReady();return;}
@@ -587,33 +503,8 @@ function selectCard(cid,role,gid){
     checkReady();
     AudioSys.playSe('select');
 }
-function updateTeamCardVisuals(gid,team){
-    const g=$(gid);
-    g.querySelectorAll('.char-card').forEach(c=>{
-        const charId=+c.dataset.charId;
-        const teamIdx=team.findIndex(ch=>ch.id===charId);
-        c.classList.toggle('selected',teamIdx>=0);
-        // 既存バッジ削除
-        const oldB=c.querySelector('.team-order-badge');
-        if(oldB) oldB.remove();
-        const oldCheck=c.querySelector('.char-card-checkmark');
-        if(oldCheck) oldCheck.remove();
-        // 順番バッジ追加
-        if(teamIdx>=0){
-            const badge=document.createElement('div');
-            badge.className='team-order-badge';
-            badge.textContent=teamIdx+1;
-            c.appendChild(badge);
-        }
-    });
-}
 function checkReady(){
     if(GS.deckStep===0) return; // online mode
-    if(GS.teamMode){
-        if(GS.deckStep===1) $('btn-deck-next').disabled=GS.p1Team.length!==3;
-        else $('btn-battle-start').disabled=GS.mode==='cpu'?false:GS.p2Team.length!==3;
-        return;
-    }
     if(GS.deckStep===1){
         $('btn-deck-next').disabled=!(GS.p1Char||GS.p1Random);
     } else {
@@ -637,46 +528,28 @@ $('btn-back-title').addEventListener('click',()=>{
     hideDetail();showScreen('title');
 });
 $('btn-deck-next').addEventListener('click',()=>{
-    if(GS.teamMode){if(GS.p1Team.length!==3)return;}
-    else{if(!(GS.p1Char||GS.p1Random))return;}
+    if(!(GS.p1Char||GS.p1Random))return;
     AudioSys.playSe('confirm');hideDetail();showDeckStep2();
 });
 $('btn-battle-start').addEventListener('click',()=>{
     if(GS.mode==='online')return;
-    if(GS.teamMode){
-        if(GS.mode==='cpu'&&GS.p2Team.length!==3)return;
-        if(GS.mode==='multi'&&GS.p2Team.length!==3)return;
-    } else {
-        if(GS.mode==='cpu'&&GS.cpuOpponentChoice===null)return;
-        if(GS.mode==='multi'&&!GS.p2Char&&!GS.p2Random)return;
-    }
+    if(GS.mode==='cpu'&&GS.cpuOpponentChoice===null)return;
+    if(GS.mode==='multi'&&!GS.p2Char&&!GS.p2Random)return;
     AudioSys.playSe('battle-start');hideDetail();startBattle();
 });
 
 // ============ Battle ============
-function generateChaosDice(count){
-    const types=[4,6,8];
-    return Array.from({length:count},()=>{const t=types[Math.floor(Math.random()*types.length)];return{type:t,label:t+'D'};});
-}
-
 function startBattle(){
-    // 3on3: チーム初期化
-    if(GS.teamMode){
-        GS.p1TeamIdx=0;GS.p2TeamIdx=0;
-        GS.p1Char=GS.p1Team[0];
-        GS.p2Char=GS.p2Team[0];
-    } else {
-        // Resolve random selections
-        if(GS.p1Random){
-            GS.p1Char=CHARACTERS[Math.floor(Math.random()*CHARACTERS.length)];
-        }
-        if(GS.mode==='cpu'&&GS.cpuOpponentChoice==='random'){
-            const a=CHARACTERS.filter(c=>c.id!==(GS.p1Char?GS.p1Char.id:-1));
-            GS.p2Char=a[Math.floor(Math.random()*a.length)];
-        } else if(GS.p2Random){
-            const a=CHARACTERS.filter(c=>c.id!==(GS.p1Char?GS.p1Char.id:-1));
-            GS.p2Char=a[Math.floor(Math.random()*a.length)];
-        }
+    // Resolve random selections
+    if(GS.p1Random){
+        GS.p1Char=CHARACTERS[Math.floor(Math.random()*CHARACTERS.length)];
+    }
+    if(GS.mode==='cpu'&&GS.cpuOpponentChoice==='random'){
+        const a=CHARACTERS.filter(c=>c.id!==(GS.p1Char?GS.p1Char.id:-1));
+        GS.p2Char=a[Math.floor(Math.random()*a.length)];
+    } else if(GS.p2Random){
+        const a=CHARACTERS.filter(c=>c.id!==(GS.p1Char?GS.p1Char.id:-1));
+        GS.p2Char=a[Math.floor(Math.random()*a.length)];
     }
     GS.p1Hp=GS.p1Char.hp;GS.p1MaxHp=GS.p1Char.hp;GS.p2Hp=GS.p2Char.hp;GS.p2MaxHp=GS.p2Char.hp;GS.turn=1;GS.animating=false;
     GS.powerStacks={p1:0,p2:0};GS.ryanDefBuff={p1:false,p2:false};GS._lastDmg=0;
@@ -686,18 +559,9 @@ function startBattle(){
     GS.ryanHealCount={p1:0,p2:0};
     GS.augustConsumedThisTurn={p1:false,p2:false};
     GS.miracleDmgOverride=false;
-    // v1.7: ハードコア HP+5
-    if(GS.hardcore){
-        GS.p2Hp+=5;GS.p2MaxHp+=5;
-    }
     showScreen('battle');
     $('action-panel-right').classList.remove('hidden');
-    updateBattleUI();
-    // モードバッジ更新
-    updateModeBadge();
-    // 3on3: チームバー更新
-    updateTeamBars();
-    showCoinFlip();
+    updateBattleUI();showCoinFlip();
 }
 
 function atkChar(){return GS.p1IsAttacker?GS.p1Char:GS.p2Char;}
@@ -870,8 +734,7 @@ function clearDamageDisplay(){
 // ============ P1 Dice (bottom) ============
 function setupP1Dice(ch,isAtk,extraRerolls=0){
     GS.rerollsLeft=isAtk?2:extraRerolls;GS.hasRolled=true;GS.activePlayer=1;
-    const diceConfig=GS.chaos?generateChaosDice(ch.dice.length):ch.dice;
-    GS.rolledDice=diceConfig.map((d,i)=>({type:d.type,value:Math.floor(Math.random()*d.type)+1,index:i,selected:false}));
+    GS.rolledDice=ch.dice.map((d,i)=>({type:d.type,value:Math.floor(Math.random()*d.type)+1,index:i,selected:false}));
     renderP1Dice(true);updateSelectionUI();updateActionButtons();
     AudioSys.playSe('roll');
     $('action-panel-right').classList.remove('hidden');
@@ -894,8 +757,7 @@ function renderP1Dice(anim=false){
 // ============ P2 Dice (top) ============
 function setupP2Dice(ch,isAtk,extraRerolls=0){
     GS.rerollsLeftP2=isAtk?2:extraRerolls;GS.hasRolled=true;GS.activePlayer=2;
-    const diceConfig=GS.chaos?generateChaosDice(ch.dice.length):ch.dice;
-    GS.rolledDiceP2=diceConfig.map((d,i)=>({type:d.type,value:Math.floor(Math.random()*d.type)+1,index:i,selected:false}));
+    GS.rolledDiceP2=ch.dice.map((d,i)=>({type:d.type,value:Math.floor(Math.random()*d.type)+1,index:i,selected:false}));
     renderP2Dice(true);updateSelectionUI();updateActionButtons();
     AudioSys.playSe('roll');
     $('action-panel-right').classList.remove('hidden');
@@ -1014,20 +876,17 @@ function cpuPhase(ch,type){
     const isAtk=type==='attack';
     const maxSel=isAtk?ch.atk:ch.def;
     const rerollCount=isAtk?2:(ch.defenseReroll||0);
-    // カオスモード: ランダムサイコロ
-    const diceConfig=GS.chaos?generateChaosDice(ch.dice.length):ch.dice;
-    const dice=diceConfig.map((d,i)=>({type:d.type,value:Math.floor(Math.random()*d.type)+1,index:i,selected:false}));
+    const dice=ch.dice.map((d,i)=>({type:d.type,value:Math.floor(Math.random()*d.type)+1,index:i,selected:false}));
     renderCpuAllDice(dice,true);
     AudioSys.playSe('roll');
     const tv=$('selection-total-value');tv.textContent='0';tv.className='selection-total-value';
 
-    // ハードコア: 強化リロール閾値
-    const rerollThreshold=GS.hardcore?0.6:0.5;
-
     function cpuDoRerolls(rerollsLeft,cb){
         if(rerollsLeft<=0){cb();return;}
-        const toReroll=dice.filter(d=>d.value<=d.type*rerollThreshold);
+        // 戦略: 出目が最大値の半分以下のサイコロをリロール
+        const toReroll=dice.filter(d=>d.value<=d.type/2);
         if(toReroll.length===0){cb();return;}
+        // リロール対象を一時的に選択表示
         toReroll.forEach(d=>d.selected=true);
         renderCpuAllDice(dice,false);
         setTimeout(()=>{
@@ -1042,14 +901,8 @@ function cpuPhase(ch,type){
         renderCpuAllDice(dice,false);
         cpuDoRerolls(rerollCount,()=>{
             // リロール完了、サイコロ選択フェーズ
-            let toSelect;
-            if(GS.hardcore && isAtk && ch.abilityType==='attack'){
-                // ハードコア: 能力ボーナスを考慮した最適選択
-                toSelect=hardcoreSmartSelect(dice,maxSel,ch);
-            } else {
-                const sorted=[...dice].sort((a,b)=>b.value-a.value);
-                toSelect=sorted.slice(0,maxSel);
-            }
+            const sorted=[...dice].sort((a,b)=>b.value-a.value);
+            const toSelect=sorted.slice(0,maxSel);
             let selIdx=0,runningTotal=0;
             function selectNext(){
                 if(selIdx>=toSelect.length){
@@ -1095,31 +948,6 @@ function cpuPhase(ch,type){
             setTimeout(selectNext,400);
         });
     },800);
-}
-
-// ハードコアCPU: 能力ボーナス考慮のスマート選択
-function hardcoreSmartSelect(dice,maxSel,ch){
-    const combos=getCombinations(dice,maxSel);
-    let bestCombo=null,bestValue=-Infinity;
-    combos.forEach(combo=>{
-        let value=combo.reduce((s,d)=>s+d.value,0);
-        // 能力ボーナスを考慮
-        if(ch.abilityType==='attack'){
-            try{
-                const r=ch.ability(combo.map(d=>({type:d.type,value:d.value})));
-                if(r&&r.bonus)value+=r.bonus;
-            }catch(e){}
-        }
-        if(value>bestValue){bestValue=value;bestCombo=combo;}
-    });
-    return bestCombo||[...dice].sort((a,b)=>b.value-a.value).slice(0,maxSel);
-}
-function getCombinations(arr,k){
-    if(k===0)return[[]];if(arr.length===0||k>arr.length)return[];
-    const result=[];const first=arr[0];const rest=arr.slice(1);
-    getCombinations(rest,k-1).forEach(c=>result.push([first,...c]));
-    getCombinations(rest,k).forEach(c=>result.push(c));
-    return result;
 }
 
 function renderCpuAllDice(dice,anim){
@@ -1397,40 +1225,9 @@ function applyDamage(dmg,instantDmg){
     GS._p2HpWasRed=p2NowRed;
     if(dmg>0){const ta=GS.p1IsAttacker?$('opponent-area'):$('player-area');ta.classList.add('shake');setTimeout(()=>ta.classList.remove('shake'),500);}
     GS.animating=false;
-    // === 3on3: チームモードのHP0処理 ===
-    if(GS.teamMode){
-        const p1Dead=GS.p1Hp<=0;
-        const p2Dead=GS.p2Hp<=0;
-        if(p1Dead||p2Dead){
-            setTimeout(()=>{
-                if(p1Dead&&p2Dead){
-                    // 両方死亡
-                    advanceTeam('p1');advanceTeam('p2');
-                    const p1Out=GS.p1TeamIdx>=GS.p1Team.length;
-                    const p2Out=GS.p2TeamIdx>=GS.p2Team.length;
-                    if(p1Out&&p2Out){showResult('draw');return;}
-                    if(p1Out){showResult();return;}
-                    if(p2Out){showResult();return;}
-                    showTeamTransition('両者 DOWN!',GS.p1Team[GS.p1TeamIdx].name+' vs '+GS.p2Team[GS.p2TeamIdx].name,()=>startNextRound());
-                } else if(p1Dead){
-                    const deadName=GS.p1Char.name;
-                    advanceTeam('p1');
-                    if(GS.p1TeamIdx>=GS.p1Team.length){showResult();return;}
-                    showTeamTransition(deadName+' DOWN!','Next: '+GS.p1Char.name,()=>startNextRound());
-                } else {
-                    const deadName=GS.p2Char.name;
-                    advanceTeam('p2');
-                    if(GS.p2TeamIdx>=GS.p2Team.length){showResult();return;}
-                    showTeamTransition(deadName+' DOWN!','Next: '+GS.p2Char.name,()=>startNextRound());
-                }
-            },800);
-            return;
-        }
-    } else {
-        // 通常モード
-        if(GS.p1Hp<=0&&GS.p2Hp<=0){setTimeout(()=>showResult('draw'),800);return;}
-        if(GS.p1Hp<=0||GS.p2Hp<=0){setTimeout(()=>showResult(),800);return;}
-    }
+    // 引き分けチェック
+    if(GS.p1Hp<=0&&GS.p2Hp<=0){setTimeout(()=>showResult('draw'),800);return;}
+    if(GS.p1Hp<=0||GS.p2Hp<=0){setTimeout(()=>showResult(),800);return;}
     setTimeout(()=>{
         clearDamageDisplay();
         $('opponent-dice-tray').innerHTML='';$('dice-tray').innerHTML='';
@@ -1452,7 +1249,7 @@ function hideAbility(){$('ability-notification').classList.add('hidden');$('abil
 // ============ Result ============
 function showResult(type){
     $('result-overlay').classList.remove('hidden');
-    AudioSys.stopBgm();
+    AudioSys.stopBgm(); // バトルBGM停止
     const t=$('result-title'),d=$('result-detail');
     if(type==='draw'){
         t.textContent='DRAW';t.className='result-title lose';
@@ -1462,23 +1259,11 @@ function showResult(type){
     const p1W=GS.p2Hp<=0;
     if(GS.mode==='cpu'){
         t.textContent=p1W?'YOU WIN!':'YOU LOSE...';t.className='result-title '+(p1W?'win':'lose');
-        if(GS.teamMode){
-            d.textContent=p1W?`チーム勝利！ ${GS.turn}ターンで決着！`:`CPUチームに敗北... ${GS.turn}ターン。`;
-        } else {
-            d.textContent=p1W?`${GS.p1Char.name} の勝利！ ${GS.turn}ターンで決着！`:`CPU ${GS.p2Char.name} に敗北... ${GS.turn}ターン。`;
-        }
+        d.textContent=p1W?`${GS.p1Char.name} の勝利！ ${GS.turn}ターンで決着！`:`CPU ${GS.p2Char.name} に敗北... ${GS.turn}ターン。`;
     } else {
         t.textContent=p1W?'1P WIN!':'2P WIN!';t.className='result-title win';
-        if(GS.teamMode){
-            d.textContent=p1W?`1Pチームの勝利！`:`2Pチームの勝利！`;
-        } else {
-            d.textContent=p1W?`1P ${GS.p1Char.name} の勝利！`:`2P ${GS.p2Char.name} の勝利！`;
-        }
+        d.textContent=p1W?`1P ${GS.p1Char.name} の勝利！`:`2P ${GS.p2Char.name} の勝利！`;
     }
-    // モード名追加
-    if(GS.chaos) d.textContent+=' [カオス]';
-    if(GS.hardcore) d.textContent+=' [ハードコア]';
-    if(GS.teamMode) d.textContent+=' [3on3]';
     createParticles(p1W||GS.mode==='multi'||GS.mode==='online');
     if(GS.mode==='cpu') AudioSys.playSe(p1W?'win':'lose');
     else if(GS.mode==='online'){
@@ -1516,92 +1301,6 @@ function resetBattleState(){
     $('turn-start-overlay').classList.add('hidden');
     $('result-overlay').classList.add('hidden');
     $('char-info-popup').classList.add('hidden');
-    $('team-transition-overlay').classList.add('hidden');
-    // v1.7: モードバッジ・チームバーリセット
-    $('mode-badge').classList.add('hidden');
-    $('p1-team-bar').classList.add('hidden');$('p1-team-bar').innerHTML='';
-    $('p2-team-bar').classList.add('hidden');$('p2-team-bar').innerHTML='';
-}
-
-// ============ v1.7 Utility Functions ============
-function updateModeBadge(){
-    const mb=$('mode-badge');
-    if(GS.chaos){mb.textContent='🎲 カオス';mb.className='mode-badge chaos-badge';}
-    else if(GS.teamMode){mb.textContent='⚔️ 3on3';mb.className='mode-badge team-badge';}
-    else if(GS.hardcore){mb.textContent='🔥 ハード';mb.className='mode-badge hardcore-badge';}
-    else{mb.classList.add('hidden');return;}
-    mb.classList.remove('hidden');
-}
-
-function updateTeamBars(){
-    if(!GS.teamMode){
-        $('p1-team-bar').classList.add('hidden');
-        $('p2-team-bar').classList.add('hidden');
-        return;
-    }
-    ['p1','p2'].forEach(key=>{
-        const bar=$(key+'-team-bar');
-        const team=key==='p1'?GS.p1Team:GS.p2Team;
-        const idx=key==='p1'?GS.p1TeamIdx:GS.p2TeamIdx;
-        bar.innerHTML='';bar.classList.remove('hidden');
-        team.forEach((ch,i)=>{
-            const slot=document.createElement('span');
-            slot.className='team-slot';
-            if(i===idx)slot.classList.add('active');
-            if(i<idx)slot.classList.add('eliminated');
-            slot.textContent=ch.emoji;
-            slot.title=ch.name;
-            bar.appendChild(slot);
-        });
-    });
-}
-
-function advanceTeam(player){
-    if(player==='p1'){
-        GS.p1TeamIdx++;
-        if(GS.p1TeamIdx<GS.p1Team.length){
-            GS.p1Char=GS.p1Team[GS.p1TeamIdx];
-            GS.p1Hp=GS.p1Char.hp;GS.p1MaxHp=GS.p1Char.hp;
-            GS.ryanHealCount.p1=0;GS.powerStacks.p1=0;
-            GS.ryanDefBuff.p1=false;GS.augustConsumedThisTurn.p1=false;
-        }
-    } else {
-        GS.p2TeamIdx++;
-        if(GS.p2TeamIdx<GS.p2Team.length){
-            GS.p2Char=GS.p2Team[GS.p2TeamIdx];
-            GS.p2Hp=GS.p2Char.hp;GS.p2MaxHp=GS.p2Char.hp;
-            // ハードコア: 次のCPUキャラもHP+5
-            if(GS.hardcore){GS.p2Hp+=5;GS.p2MaxHp+=5;}
-            GS.ryanHealCount.p2=0;GS.powerStacks.p2=0;
-            GS.ryanDefBuff.p2=false;GS.augustConsumedThisTurn.p2=false;
-        }
-    }
-}
-
-function showTeamTransition(text,nextText,cb){
-    const o=$('team-transition-overlay');
-    $('team-transition-text').textContent=text;
-    $('team-transition-next').textContent=nextText||'';
-    o.classList.remove('hidden');
-    AudioSys.playSe('turn');
-    setTimeout(()=>{
-        o.classList.add('hidden');
-        if(cb)cb();
-    },2000);
-}
-
-function startNextRound(){
-    // UIリセットして次のラウンド開始
-    clearDamageDisplay();
-    $('opponent-dice-tray').innerHTML='';$('dice-tray').innerHTML='';
-    GS._p1HpWasRed=false;GS._p2HpWasRed=false;
-    updateBattleUI();
-    updateTeamBars();
-    // ターンは継続（リセットしない）
-    GS.p1IsAttacker=!GS.p1IsAttacker;
-    if(GS._turnHalf===0){GS._turnHalf=1;}
-    else{GS._turnHalf=0;GS.turn++;}
-    startTurn();
 }
 
 // Init
