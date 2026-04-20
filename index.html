@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>サイコロ・ウォーズ v1.6</title>
+    <title>サイコロ・ウォーズ v1.7</title>
     <meta name="description" content="サイコロ・ウォーズ - サイコロで戦う戦略バトルゲーム！キャラカードとサイコロを駆使して勝利を掴め！">
     <meta name="theme-color" content="#0D0B2E">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -34,7 +34,7 @@
         <div class="op-content">
             <div class="op-title-main">サイコロ・ウォーズ</div>
             <div class="op-title-sub">DICE BATTLE STRATEGY</div>
-            <div class="op-title-ver">v1.6</div>
+            <div class="op-title-ver">v1.7</div>
         </div>
     </div>
 
@@ -47,7 +47,7 @@
                 <div class="title-dice-decoration left">🎲</div>
                 <h1 class="title-text">
                     <span class="title-main">サイコロ・ウォーズ</span>
-                    <span class="title-version">v1.6</span>
+                    <span class="title-version">v1.7</span>
                 </h1>
                 <div class="title-dice-decoration right">🎲</div>
             </div>
@@ -92,13 +92,9 @@
             </div>
             <div class="modal-body" style="display:flex;flex-direction:column;gap:10px;">
                 <button id="btn-cpu-normal" class="btn-glow mode-btn" style="width:100%;">🎮 通常バトル</button>
-                <button id="btn-cpu-chaos" class="btn-glow mode-btn btn-chaos" style="width:100%;">🎲 カオスモード</button>
                 <button id="btn-cpu-3on3" class="btn-glow mode-btn btn-team" style="width:100%;">⚔️ 3on3 チームバトル</button>
-                <button id="btn-cpu-hardcore" class="btn-glow mode-btn btn-hardcore" style="width:100%;">🔥 ハードコア</button>
                 <p class="mode-desc-text">
-                    🎲 カオス: 毎ターンサイコロがランダム<br>
-                    ⚔️ 3on3: 3体選んでリレーバトル<br>
-                    🔥 ハードコア: CPUが超強化 (HP+5)
+                    ⚔️ 3on3: 3体選んでリレーバトル
                 </p>
             </div>
         </div>
@@ -113,7 +109,6 @@
             </div>
             <div class="modal-body" style="display:flex;flex-direction:column;gap:10px;">
                 <button id="btn-local-normal" class="btn-glow btn-multi mode-btn" style="width:100%;">🎮 通常バトル</button>
-                <button id="btn-local-chaos" class="btn-glow btn-multi mode-btn btn-chaos" style="width:100%;">🎲 カオスモード</button>
                 <button id="btn-local-3on3" class="btn-glow btn-multi mode-btn btn-team" style="width:100%;">⚔️ 3on3 チームバトル</button>
             </div>
         </div>
@@ -312,7 +307,19 @@
             </div>
             <div class="modal-body">
                 <div class="update-entry">
-                    <span class="version-badge new">🟢 v1.6</span>
+                    <span class="version-badge new">🟢 v1.7</span>
+                    <span class="update-date">2026/04/20</span>
+                    <ul class="update-list">
+                        <li>✦ 新モード「⚔️ 3on3 チームバトル」追加（VS CPU / ローカルマルチ対応）</li>
+                        <li>✦ 3体のキャラを選んでリレー形式でバトル！</li>
+                        <li>✦ チームインジケータで残りキャラが一目でわかる</li>
+                        <li>✦ キャラ交代演出「○○ DOWN!」追加</li>
+                        <li>✦ VS CPU / ローカルプレイにモード選択モーダル追加</li>
+                        <li>✦ バトル中にモードバッジ表示</li>
+                    </ul>
+                </div>
+                <div class="update-entry">
+                    <span class="version-badge">🟢 v1.6</span>
                     <span class="update-date">2026/04/15</span>
                     <ul class="update-list">
                         <li>✦ 新キャラ「ミラクル」追加</li>
